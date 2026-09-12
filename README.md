@@ -1,0 +1,3 @@
+# CowWorker
+
+CowWorker is a multiplatform app that helps users with the job hunting process. Users can manually or automatically add job vacancy descriptions (plain text, links, and screenshots). The app uses AI (BYOT) to boost productivity, help create and adjust resumes, write tailored cover letters, and manage applied vacancies. The app tracks the status of added job postings, displays a fit score, and shows job posting statistics, as well as information about the company and its employees. The app also collects statistics, performs analyses, and displays research results with graphs and charts.
