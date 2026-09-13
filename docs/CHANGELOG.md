@@ -7,9 +7,18 @@ status: reference
 
 # Changelog
 
-This log records repository documentation and design changes. No application release is recorded.
+This log records repository changes. Version 0.1.0 is a local development build, not a published release.
 
 ## 2026-09-13
+
+- Added the Rust storage library, SQLite schema, and immutable text document versions.
+- Added the Tauri desktop app and the React interface based on the selected visual direction.
+- Added vacancy capture, editing, search, filters, shortlist, archive, and restoration.
+- Added document editing, UTF-8 text import, version history, and text export.
+- Added applications, locked submitted versions, stage history, and next-action dates.
+- Added Today, a local profile, theme selection, and sidebar preferences.
+- Added browser and native workflow tests, including persistence across process restarts.
+- Built the Windows executable and NSIS installer.
 
 - Recorded Rust, React, TypeScript, Tauri, and SQLite as the accepted stack.
 - Recorded local document files and server synchronization as the storage direction.

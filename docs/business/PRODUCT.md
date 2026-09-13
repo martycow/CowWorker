@@ -26,6 +26,8 @@ This release boundary is a proposal. AI analysis, document import, and external 
 ## Current state
 
 The user accepted the stack, storage direction, and first visual prototype with a hideable sidebar.
-The repository contains documentation and visual prototypes. Product behavior is not implemented or verified.
+The first local workflow now includes manual vacancy capture, text document versions, application history, next actions, and profile facts.
+Windows native checks verify the workflow and persistence across restarts.
+AI, PDF and DOCX import, external integrations, synchronization, and mobile delivery remain open.
 
 See [decisions](../DECISIONS.md), [UI](../design/UI.md), and [backlog](../management/BACKLOG.md).

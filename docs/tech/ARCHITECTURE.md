@@ -2,12 +2,12 @@
 owner: marty
 created: "2026-09-13"
 last_verified: "2026-09-13"
-status: draft
+status: implemented-baseline
 ---
 
 # Architecture
 
-This document separates accepted boundaries from a proposed implementation structure.
+This document describes the first local implementation and the remaining architecture decisions.
 
 ## Accepted boundaries
 
@@ -17,21 +17,25 @@ Local work must remain available without server access.
 
 See [decisions 001 and 002](../adr/001-025.md).
 
-## Proposed structure
+## Implemented structure
 
-Use one application with modules for Profile, Vacancies, Applications, Documents, AI, and Integrations.
-Rust services own data changes. UI components request operations through explicit Tauri commands.
-Keep provider-specific behavior behind adapters.
+`frontend/` contains the React interface, typed command adapter, forms, and local list rules.
+`src-tauri/` contains the desktop shell and explicit commands. `backend/` contains a separate Rust library for storage and validation.
 
-Store metadata and document version relationships in SQLite. Keep original files and submitted copies addressable from those records.
-Represent long-running work with explicit state, cancellation, and error handling.
+Rust owns desktop data changes. SQLite stores relationships and metadata. Separate UTF-8 files store immutable document versions.
+Commands serialize database access through a mutex. Application changes and history events share a transaction.
+The interface keeps failed forms open and shows an error. Database startup errors appear inside the app and support a retry.
+
+The browser adapter uses a separate localStorage namespace for demonstration. It does not replace native persistence tests.
+There are no AI providers, background workers, or server modules yet.
 
 ## Open decisions
 
-- Schema, identifiers, migrations, and file layout
+- Migrations after schema 1 and a backup interface
 - Synchronization protocol, conflict rules, deletions, and document transfer
 - Background execution when the window or application is closed
 - AI context files and their relationship to stored application data
 - Authentication, server stack, and mobile architecture
 
-No module structure, server, or synchronization protocol is implemented.
+See [data model](DATA_MODEL.md) for current identifiers, states, file layout, and version rules.
+No server or synchronization protocol is implemented.
