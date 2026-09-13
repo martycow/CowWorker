@@ -1,10 +1,15 @@
 ---
 owner: marty
-created: 09/12/2026
-last_verified: 09/12/2026
+created: "2026-09-12"
+last_verified: "2026-09-13"
+status: historical-concept
 ---
 
 # Initial Concept
+
+This document preserves the original brainstorm, including unresolved and superseded ideas.
+Use [the decision index](DECISIONS.md), [current stack](tech/STACK.md), and [UI direction](design/UI.md) for accepted choices.
+The review date confirms this document's role; it does not verify hardware, services, or brainstorm claims.
 
 This document stores a concept for a project. Here are my thoughts, ideas, desires and a vision for the future product.
 
