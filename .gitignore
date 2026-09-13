@@ -162,6 +162,7 @@ dist/
 src-tauri/gen/
 test-results/
 playwright-report/
+output/verification/
 *.db
 *.db-shm
 *.db-wal
