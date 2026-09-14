@@ -55,7 +55,7 @@ export function VacancyForm({ vacancy, onSave, busy }: { vacancy?: Vacancy } & S
             maxLength={300}
             value={form.title}
             onChange={(e) => change('title', e.target.value)}
-            placeholder="Senior Frontend Engineer"
+            placeholder="Senior Gameplay Engineer"
           />
         </Field>
         <Field label="Company">

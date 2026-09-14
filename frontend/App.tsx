@@ -43,24 +43,29 @@ import {
   type Workspace,
 } from './types';
 
-type Page = 'Today' | 'Vacancies' | 'Applications' | 'Documents' | 'Profile' | 'Settings';
+type Page = 'Today' | 'Vacancies' | 'Applications' | 'Documents' | 'Interviews' | 'Glossary' | 'Profile' | 'Settings';
+
 type Editor =
   | { kind: 'vacancy'; record?: Vacancy }
   | { kind: 'document'; record?: CareerDocument }
   | { kind: 'application'; record: Application };
+
 const navigation = [
   { name: 'Today', icon: Home },
   { name: 'Vacancies', icon: BriefcaseBusiness },
   { name: 'Applications', icon: CheckCheck },
   { name: 'Documents', icon: FileText },
 ] as const;
+
 const captions: Record<Page, string> = {
-  Today: 'One step at a time. Keep your next move in sight.',
-  Vacancies: 'Find the right opportunities. Save, review and prepare with confidence.',
-  Applications: 'Every application, its documents and the next step.',
-  Documents: 'Your experience, in your words. Keep every version.',
-  Profile: 'A place for your professional story.',
-  Settings: 'Make room for the way you work.',
+  Today: 'Keep your next move in sight.',
+  Vacancies: 'Vacancies manager.',
+  Applications: 'Job applications manager.',
+  Interviews: 'Interviews manager',
+  Documents: 'Your career path in a form of documents.',
+  Profile: 'Brief information about you.',
+  Settings: 'Setup and customize application.',
+  Glossary: 'Storage of knowledge.',
 };
 
 export function App() {

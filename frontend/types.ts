@@ -1,12 +1,14 @@
 export type VacancyStatus = 'saved' | 'reviewed' | 'shortlisted' | 'archived';
 export type Stage = 'preparing' | 'applied' | 'interview' | 'offer' | 'rejected' | 'withdrawn';
-export type DocumentKind = 'resume' | 'cover-letter' | 'note';
+export type DocumentKind = 'resume' | 'cover-letter' | 'note' | 'job-offer' | 'agreement' | 'tax-related' | 'other';
+export type WorkMode = 'Remote' | 'Hybrid' | 'On-Site' | 'Unspecified';
+
 export interface Vacancy {
   id: string;
   title: string;
   company: string;
   location: string;
-  workMode: 'Remote' | 'Hybrid' | 'On-site' | 'Unspecified';
+  workMode: WorkMode;
   sourceUrl: string;
   description: string;
   notes: string;
@@ -75,6 +77,10 @@ export const documentLabels: Record<DocumentKind, string> = {
   resume: 'Resume',
   'cover-letter': 'Cover letter',
   note: 'Note',
+  'job-offer': 'Job offer',
+  agreement: 'Agreement',
+  'tax-related': 'Tax related',
+  other: "Other"
 };
 export function localDate(date = new Date()): string {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
