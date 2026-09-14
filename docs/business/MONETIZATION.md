@@ -9,6 +9,10 @@ status: draft
 
 No pricing or revenue model is approved.
 
+AI Operation means model use, not a paid action. Local models, BYOK, free models, and subscription credits can share that marker.
+AI Usage separates estimated and actual cost, with explicit unknown values. Credit balance remains optional.
+The [current requirements](PRODUCT.md) do not approve billing, subscriptions, or a pricing tier.
+
 ## Brainstormed options
 
 - BYOK: the user supplies an API key and pays the AI provider.

@@ -45,3 +45,29 @@ Browser tests cover filters, sidebar state, dialog focus, narrow layouts, and th
 Native Windows tests cover real commands, exports, and persistence. The [verification record](../tech/VERIFICATION.md) defines their limits.
 
 See [decision 003](../adr/001-025.md#decision-003-visual-direction-and-hideable-sidebar).
+
+## Required extensions, not implemented
+
+[Product](../business/PRODUCT.md) owns the requirements. [Development plan](../management/V0.2.0_DEVELOPMENT_PLAN.md) defines delivery and checks.
+
+The shell adds a contextual AI panel, Universal Add, and a compact global task indicator.
+The right AI panel also supports bottom placement. Hiding it must preserve a visible restore action and the main workspace.
+The existing entity detail pane remains separate. At narrow widths, panels must not squeeze the workspace into unusable columns.
+AI context follows page, entity, version, field, and selection. Navigation alone must not start model calls.
+
+Inline suggestions and field comments show only useful context. Users can dismiss them and inspect evidence before applying proposals.
+One AI Operation control uses the same marker everywhere. Its accessible name must explain the action without relying on the glyph.
+The detail popover exposes purpose, provider/model, estimates when known, and optional credit information.
+An AI marker never implies a paid action. Unknown cost stays explicitly unknown.
+
+Universal Add accepts input before requiring classification. Review shows original input, extracted fields, confidence, and user corrections.
+Users can accept selected candidates or retain overrides. Conflicts show the latest value and the proposal.
+Long import work moves into Task Center. A review draft survives navigation and restart.
+Task Center shows stage, progress, elapsed time, details, cancel, and retry with per-task state.
+Completion toasts reuse the existing status pattern. Repeated progress updates must not flood assistive announcements.
+
+Company cards show related-job counts and stage summaries. They never flatten all jobs into one company status.
+Past/current employers receive distinct relationship badges. Missing logos reuse CompanyMark.
+Company Details shows source/update information and explicit refresh.
+AI Usage provides summary cards, tables, charts, filters, and history from the central ledger.
+Charts need a text/table equivalent. Existing CSS tokens, themes, keyboard patterns, and semantic tables remain the visual foundation.

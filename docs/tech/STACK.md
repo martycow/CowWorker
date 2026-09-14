@@ -38,7 +38,7 @@ The synchronization protocol, conflict rules, and server implementation remain o
 - Backup and local encryption
 - Synchronization protocol, conflict rules, and document transfer
 - Document editor, import, and export libraries
-- AI integration contracts and background execution
+- Provider/parser selection and platform packaging within the planned Rust runtime contracts
 - Installation, signing, and updates
 - Server responsibilities and mobile scope
 
@@ -50,3 +50,10 @@ The application uses npm, React 19, TypeScript 5.9, Vite 8, Tauri 2, and rusqlit
 `package-lock.json` and `Cargo.lock` record exact resolved dependencies. Both files belong in source control.
 Rust core tests cover persistence and state rules. Vitest covers list rules. Playwright covers browser and Windows WebView2 workflows.
 The [environment document](ENVIRONMENT.md) contains verified tool versions and data locations.
+
+## Planned runtime direction
+
+Rust owns persistent background tasks, import processing, company research, and centralized AI accounting.
+React owns contextual AI presentation and global task status. SQLite stores task checkpoints, provenance, and the usage ledger.
+These systems are planned, not installed dependencies. [Architecture](ARCHITECTURE.md) defines their contracts.
+The [development plan](../management/V0.2.0_DEVELOPMENT_PLAN.md) includes bounded parser/provider spikes before dependency selection.

@@ -192,7 +192,7 @@ export async function loadExamples(): Promise<void> {
       'Frontend Developer',
       'Cinder Systems',
       'San Francisco, CA',
-      'On-site',
+      'On-Site',
       'Create useful, accessible dashboards with a multidisciplinary team.',
     ],
     [

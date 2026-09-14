@@ -7,6 +7,8 @@ user on every step related to job, from writing resume to signing work contract,
 
 ## Development
 
+- Read `docs/business/PRODUCT.md` for requirements and `docs/tech/ARCHITECTURE.md` for current boundaries and planned contracts.
+- Read `docs/management/DEVELOPMENT_PLAN.md` before implementing contextual AI, Universal Import, Companies, Background Tasks, or AI Usage.
 - Read `README.md` for startup and checks, `docs/tech/DATA_MODEL.md` for storage rules, and `docs/management/TASKS.md` for current work.
 - Keep desktop data changes in the Rust library under `backend/`. The Tauri shell is under `src-tauri/`; React sources are under `frontend/`.
 - Commit `Cargo.lock` and `package-lock.json`. Keep development, test, and release data separate.
@@ -14,6 +16,17 @@ user on every step related to job, from writing resume to signing work contract,
 - For native changes, build with `npm.cmd run tauri -- build --debug --no-bundle` and run `npm.cmd run test:native` on Windows.
 - Browser checks do not establish native behavior or macOS support. Record these evidence boundaries in `docs/tech/VERIFICATION.md`.
 - Preserve immutable submitted document versions. Do not transmit data to employers or services without explicit authorization.
+
+## Product invariants
+
+- Keep AI contextual and quiet. Use a global AI panel and field proposals with one consistent AI Operation marker.
+- Route every model call through the planned Rust AI runtime and central usage ledger. AI Operation does not mean paid operation.
+- Run long operations through the planned persistent Rust queue. Navigation must not control their lifetime.
+- Preserve original import sources. Keep extraction, classification, parsing, normalization, enrichment, review, and save separate.
+- Keep user overrides above extracted or generated values. Apply proposals with revision checks, including explicit empty values.
+- Treat Company as an independent entity with many vacancies. Keep application stages on each application.
+- Distinguish implemented behavior from planned requirements. The current code has no AI runtime, task queue, or Company entity.
+- Keep detailed steps in the development plan. `CLAUDE.md` remains a pointer to this file.
 
 ## Decision record layout
 

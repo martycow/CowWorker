@@ -37,7 +37,7 @@ The broader concept also includes financial and employment records. Their inclus
 - Use an operating-system credential store for provider keys.
 - Limit Tauri commands and filesystem access to required operations.
 - Treat imported documents, vacancies, and AI output as untrusted input.
-- Require review before AI edits replace user facts or documents.
+- Keep generated candidates separate from user overrides. Require revision-checked review before applying proposals.
 - Require explicit user action before external submission or messaging.
 - Define authenticated synchronization and encrypted transport before deployment.
 
@@ -47,3 +47,17 @@ Local encryption, backups, deletion, account recovery, retention, and server acc
 Document parsers and external processes need defined limits and failure handling.
 
 See [architecture](ARCHITECTURE.md) and [environment](ENVIRONMENT.md).
+
+## Planned import and AI controls
+
+An import action alone does not authorize transmission to a model provider.
+Before remote processing, authorization must identify destination, purpose, and data scope.
+Queue payloads and usage rows store source/entity IDs and credential references, never provider keys.
+Imported text and model output cannot authorize tools, external messages, or subsequent uploads.
+
+URL fetches validate redirects and resolved addresses as well as the original URL. Private-network targets are blocked by default.
+Parsers enforce byte, page, pixel, decompression, memory, and execution limits. Documents cannot execute macros or scripts.
+Original assets use managed paths and hashes. File selection/drop grants access only to the selected inputs.
+Local sources contain personal information. Referenced evidence remains available until an explicit retention/deletion action removes it safely.
+Backups cover all source and company assets. Cancellation must prevent late result application while preserving available usage records.
+These controls are implementation requirements, not verified protections in the current release.
