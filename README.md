@@ -2,20 +2,19 @@
 
 CowWorker is a local job search workspace built with Rust, React, TypeScript, Tauri, and SQLite.
 
-The first version supports vacancy capture, document versions, application history, next actions, and a local career profile.
-Windows builds and the native workflow pass local checks. macOS is a required target, but native validation remains open.
+By default, it supports vacancy capture, document versions, application history, next actions, and a local career profile.
 
 ## Start on Windows
 
 Install Node.js 22.12 or later, Rust, Visual Studio C++ Build Tools, and WebView2.
 Then run these commands from the repository root in PowerShell:
 
-| Command | Purpose |
-| --- | --- |
-| `npm.cmd ci` | Install the locked JavaScript dependencies |
-| `npm.cmd run tauri -- dev` | Start the desktop app with development data |
-| `npm.cmd run dev` | Start the separate browser demo at `http://127.0.0.1:1420` |
-| `npm.cmd run tauri -- build` | Build the release executable and Windows installer |
+| Command                      | Purpose                                                    |
+|------------------------------|------------------------------------------------------------|
+| `npm.cmd ci`                 | Install the locked JavaScript dependencies                 |
+| `npm.cmd run tauri -- dev`   | Start the desktop app with development data                |
+| `npm.cmd run dev`            | Start the separate browser demo at `http://127.0.0.1:1420` |
+| `npm.cmd run tauri -- build` | Build the release executable and Windows installer         |
 
 Use `npm` instead of `npm.cmd` on macOS. macOS also requires Xcode Command Line Tools.
 The [Tauri prerequisites](https://v2.tauri.app/start/prerequisites/) describe the platform requirements.
@@ -26,7 +25,7 @@ The standalone executable appears at `target/release/cowworker.exe` and requires
 ## First workflow
 
 1. Add a vacancy and paste its original description.
-2. Create or import a text resume under Documents.
+2. Create or import a resume under Documents.
 3. Select Prepare application on the vacancy.
 4. Attach the exact document versions under Update application.
 5. After you submit externally, select Applied and save the application.
@@ -37,15 +36,15 @@ Later document edits create new versions. Submitted applications keep the earlie
 
 ## Checks
 
-| Command | Purpose |
-| --- | --- |
-| `npm.cmd run check` | Build the interface and run frontend and Rust core tests |
-| `npm.cmd run test:e2e` | Run browser workflow checks with Microsoft Edge |
-| `cargo clippy --workspace --all-targets -- -D warnings` | Check Rust code and reject warnings |
-| `cargo fmt --all --check` | Check Rust formatting |
-| `npm.cmd run format:check` | Check frontend and test formatting |
-| `npm.cmd run tauri -- build --debug --no-bundle` | Build the native test executable |
-| `npm.cmd run test:native` | Run the Windows workflow against real Tauri commands and SQLite |
+| Command                                                 | Purpose                                                         |
+|---------------------------------------------------------|-----------------------------------------------------------------|
+| `npm.cmd run check`                                     | Build the interface and run frontend and Rust core tests        |
+| `npm.cmd run test:e2e`                                  | Run browser workflow checks with Microsoft Edge                 |
+| `cargo clippy --workspace --all-targets -- -D warnings` | Check Rust code and reject warnings                             |
+| `cargo fmt --all --check`                               | Check Rust formatting                                           |
+| `npm.cmd run format:check`                              | Check frontend and test formatting                              |
+| `npm.cmd run tauri -- build --debug --no-bundle`        | Build the native test executable                                |
+| `npm.cmd run test:native`                               | Run the Windows workflow against real Tauri commands and SQLite |
 
 The native test creates a temporary workspace. Its report and screenshots appear under `output/verification/`.
 It checks persistence across process restarts and the content of exported document versions.
@@ -58,7 +57,5 @@ Each workspace contains `cowworker.db` and `documents/`. Close CowWorker before 
 
 The browser demo uses separate browser storage. It does not read or modify the desktop workspace.
 Fictional examples are available only through the browser demo action.
-
-This version imports UTF-8 `.txt` and `.md` files. PDF, DOCX, screenshots, AI, server synchronization, and external integrations remain future work.
 
 See [tasks](docs/management/TASKS.md), [architecture](docs/tech/ARCHITECTURE.md), [data model](docs/tech/DATA_MODEL.md), and [verification](docs/tech/VERIFICATION.md).

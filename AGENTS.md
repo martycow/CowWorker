@@ -2,7 +2,8 @@
 
 ## What this project is
 
-CowWorker is a multiplatform app that improves users' job hunting process. It has many built-in features which assist user on every step related to job, from writing resume to signing work contract.
+CowWorker is a multiplatform app that improves user's job hunting process. It has many built-in features which assist
+user on every step related to job, from writing resume to signing work contract, and career development.
 
 ## Development
 
@@ -20,3 +21,16 @@ CowWorker is a multiplatform app that improves users' job hunting process. It ha
 - Store decision records in `docs/adr/`, grouped by ranges of 25 decision numbers.
 - Use `001-025.md`, `026-050.md`, `051-075.md`, and subsequent ranges. The current file can contain fewer than 25 decisions.
 - Give each decision a numbered heading and link to that heading from `docs/DECISIONS.md`.
+
+## Version management
+
+Application has current version to better compare it with older states. 
+
+- Versioning starts with v0.1.0
+- The format is "v{Major}.{Minor}.{Build}"
+- Major version will rarely be changed. Until public release it equals 0. Major version 1 means that application was publicly released. Increase Major version if the whole product changed significantly since previous Major version.
+- Minor version is an intermediate version. When Major version changes, Minor version resets to 0. Minor version increased when there are big and noticeable changes.
+- Build version is increased any time build process succeed. When Major or Minor version change, Build version resets to 0.
+- There are multiple files in the project which use versioning for their own purpose. Keep it updated and synced!
+- `package.json`, `src-tauri/tauri.conf.json`, `src-tauri/Cargo.toml`, `backend/Cargo.toml` have versions in there.
+- Version in `package.json` is considered as root version. Others are synced with it.

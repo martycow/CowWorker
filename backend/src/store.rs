@@ -226,7 +226,7 @@ impl Store {
         required(&input.content, "Document content", 1_000_000)?;
         one_of(
             &input.kind,
-            &["resume", "cover-letter", "note"],
+            &["resume", "cover-letter", "note", "job-offer", "agreement", "tax-related", "other"],
             "document type",
         )?;
         let document_id = input.id.clone().unwrap_or_else(id);
