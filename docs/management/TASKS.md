@@ -1,54 +1,74 @@
 ---
 owner: marty
-created: "2026-09-13"
-last_verified: "2026-09-13"
+created: '2026-09-13'
+last_verified: '2026-09-13'
 status: active
 ---
 
 # Tasks
 
-## Completed documentation work
+This file lists planned tasks and tasks in development.
+Before removing a completed task, record its outcome in the [permanent task registry](TASK_REGISTRY.md).
 
-- [x] Record the application stack and storage direction.
-- [x] Group ADRs by ranges of 25 and keep a link-only decision index.
-- [x] Record the selected visual prototype and hideable sidebar.
-- [x] Add metadata and initial content to all Markdown documents in docs.
+## Task areas
 
-## Completed implementation
+| Area        | Literal | Description                                        |
+| ----------- | ------- | -------------------------------------------------- |
+| Feature     | FT      | New business logic                                 |
+| Improvement | IMP     | Changes to existing business logic                 |
+| UI          | UI      | User interface and user experience                 |
+| Planning    | PL      | Documentation, decisions, and brainstorming        |
+| Deployment  | DEP     | Infrastructure and distribution setup              |
+| Business    | BS      | Marketing, distribution, monetization, and metrics |
 
-- [x] Define the local data model and document version rules.
-- [x] Select dependencies, npm, lockfiles, and build commands.
-- [x] Create the Tauri, React, TypeScript, and Rust application structure.
-- [x] Create the SQLite schema and transactional storage layer.
-- [x] Implement vacancy capture, source preservation, editing, and duplicate URL checks.
-- [x] Implement search, filters, sorting, shortlist, archive, and restoration.
-- [x] Implement text documents, immutable versions, import, and export.
-- [x] Implement application preparation, stages, history, and submitted document locking.
-- [x] Implement next-action dates and the Today view.
-- [x] Implement local profile facts and appearance preferences.
-- [x] Implement sidebar hiding, restoration, keyboard focus, and narrow layouts.
-- [x] Protect unsaved dialog changes and retain input after save errors.
-- [x] Validate Rust state rules and persistence across database reopen.
-- [x] Validate browser workflows, text export, and a 620-pixel layout.
-- [x] Validate the Windows native workflow across process restart.
-- [x] Build a Windows executable and an NSIS installer.
-- [x] Add startup instructions and a verification record.
+## Task format
 
-## Remaining validation
+| Part     | Description                                                                                          |
+| -------- | ---------------------------------------------------------------------------------------------------- |
+| Status   | `[ ]` = not started, `[!]` = in development, `[X]` = done before removal                             |
+| ID       | Area literal and a global number from the task registry, separated by `-`. Use at least four digits. |
+| Priority | `Low`, `Med`, `High`, or `BLOCKER`                                                                   |
+| Added    | Date the task entered this list, in `MM-DD-YYYY` format                                              |
 
-- [ ] Build and launch on macOS. No macOS host was available in this run.
-- [ ] Install and uninstall the Windows package on a clean machine.
-- [ ] Validate signed packages and the update channel.
-- [ ] Check assistive technology, contrast, and large real workspaces beyond the current test coverage.
+Format template (does not reserve an ID):
 
-## Next implementation candidates
+```text
+- [!] [AREA-NNNN] [Low] [MM-DD-YYYY] Task description.
+```
 
-- [ ] Add complete workspace backup and restoration with integrity checks.
-- [ ] Add PDF and DOCX import and export with parser limits and preview checks.
-- [ ] Add AI provider discovery and an evidence-based analysis contract.
-- [ ] Add a user-reviewed proposal flow for AI document changes.
-- [ ] Define synchronization identity, revisions, conflicts, and server boundaries.
-- [ ] Add calendar and notification adapters after local scheduling rules are established.
+`[!]` is a text status marker. Markdown does not render it as a checkbox.
+
+The existing tasks use `Med` as a provisional priority until review.
+
+## ID allocation
+
+The [task registry](TASK_REGISTRY.md) stores the last issued number and every assigned ID.
+All areas share one sequence. Task removal, completion, cancellation, or an area change never releases an ID.
+
+Reserve each ID in the registry before adding the task here. Never calculate the next number from this active list.
+Keep the full assigned ID when moving, editing, or reopening a task, even if its area changes.
+
+## TODO
+
+These tasks require a person, with optional AI assistance:
+
+- [ ] [DEP-0001] [Med] [09-13-2026] Build and launch on macOS. The recorded validation had no macOS host.
+- [ ] [DEP-0002] [Med] [09-13-2026] Install and uninstall the Windows package on a clean machine.
+- [ ] [DEP-0003] [Med] [09-13-2026] Validate signed packages and the update channel.
+- [ ] [UI-0004] [Med] [09-13-2026] Validate assistive technology, contrast, and large real workspaces beyond the current test coverage.
+
+## Current
+
+No tasks are in development.
+
+## Upcoming
+
+- [ ] [FT-0005] [Med] [09-13-2026] Add complete workspace backup and restoration with integrity checks.
+- [ ] [FT-0006] [Med] [09-13-2026] Add PDF and DOCX import and export with parser limits and preview checks.
+- [ ] [FT-0007] [Med] [09-13-2026] Add AI provider discovery and an evidence-based analysis contract.
+- [ ] [FT-0008] [Med] [09-13-2026] Add a user-reviewed proposal flow for AI document changes.
+- [ ] [PL-0009] [Med] [09-13-2026] Define synchronization identity, revisions, conflicts, and server boundaries.
+- [ ] [FT-0010] [Med] [09-13-2026] After local scheduling rules are established, add calendar and notification adapters.
 
 See [verification](../tech/VERIFICATION.md) for evidence and limits.
 

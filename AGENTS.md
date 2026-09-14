@@ -22,6 +22,14 @@ user on every step related to job, from writing resume to signing work contract,
 - Use `001-025.md`, `026-050.md`, `051-075.md`, and subsequent ranges. The current file can contain fewer than 25 decisions.
 - Give each decision a numbered heading and link to that heading from `docs/DECISIONS.md`.
 
+## Task IDs
+
+- Use `docs/management/TASK_REGISTRY.md` as the authoritative task counter and permanent ID registry.
+- Reserve the next global number in the registry before adding a task to `docs/management/TASKS.md`.
+- Use one sequence across all task areas. Never decrease the counter, reuse a number, or change an assigned ID.
+- When a task is completed or cancelled, record its outcome in the registry before removing it from `TASKS.md`.
+- Keep registry entries permanently. Follow the registry rules for concurrent edits and merge conflicts.
+
 ## Version management
 
 Application has current version to better compare it with older states. 

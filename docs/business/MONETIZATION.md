@@ -9,13 +9,13 @@ status: draft
 
 No pricing or revenue model is approved.
 
-## Options from the concept
+## Brainstormed options
 
 - BYOK: the user supplies an API key and pays the AI provider.
 - Managed AI usage: CowWorker charges for usage or credit packs.
-
-The original 3% markup is an unvalidated idea, not a price commitment.
-BYOK and managed credits require different billing and cost tracking.
+- Sell credits which may be used to execute premium operations.
+- Subscription model. Free tier lets you do the basis with some limitations. Premium tier lets you do everything with some meaningful limitations.
+- Premium pier for $10/monthly or $100/yearly
 
 ## Open questions
 
