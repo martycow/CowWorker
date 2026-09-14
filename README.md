@@ -58,4 +58,12 @@ Each workspace contains `cowworker.db` and `documents/`. Close CowWorker before 
 The browser demo uses separate browser storage. It does not read or modify the desktop workspace.
 Fictional examples are available only through the browser demo action.
 
-See [tasks](docs/management/TASKS.md), [architecture](docs/tech/ARCHITECTURE.md), [data model](docs/tech/DATA_MODEL.md), and [verification](docs/tech/VERIFICATION.md).
+## Project context
+
+[Product](docs/business/PRODUCT.md) owns requirements. [Architecture](docs/tech/ARCHITECTURE.md) owns boundaries and planned contracts.
+[Data model](docs/tech/DATA_MODEL.md) distinguishes the current schema from planned migrations.
+[Development plan](docs/management/V0.2.0_DEVELOPMENT_PLAN.md) contains the repository audit, dependencies, phases, and acceptance criteria.
+[Tasks](docs/management/TASKS.md) tracks active work. [Verification](docs/tech/VERIFICATION.md) separates recorded results from current evidence.
+
+Contextual AI, Universal Import, Companies, Background Tasks, and AI Usage are required extensions. They are not implemented yet.
+The plan records a current TypeScript error and a schema compatibility risk before feature work starts.

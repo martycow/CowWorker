@@ -23,7 +23,6 @@ These working definitions guide documentation. Unresolved terms do not establish
 | Match Evidence | Requirements compared with supported profile facts, including gaps and unknowns. |
 | Fit Score | An unresolved concept term; no formula or offer-probability claim is approved. |
 | BYOK | Bring Your Own Key: access to an AI service through a user-supplied API key. |
-| BYOT | A legacy concept label whose intended meaning still needs clarification. |
 | Local-first | Local work remains available without a server connection. |
 | ADR | Architecture Decision Record; decisions are grouped in files of up to 25 records. |
 | Company | Independent employer identity with many vacancies and explicit user relationships. Planned, not yet a model. |
