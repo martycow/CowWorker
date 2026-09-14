@@ -47,28 +47,31 @@ The Today page compares dates in the device's local calendar. This version does 
 ## Storage and migrations
 
 `cowworker.db` holds metadata and relationships. `documents/<version-uuid>.txt` holds each exact saved text version.
-Files use generated UUID names, never a user-provided path. The UI supports UTF-8 `.txt` and `.md` imports up to 1 MB.
-The import retains the decoded text, including line endings; it is not a binary document importer.
+Files use generated UUID names. Universal Add retains original input bytes in `sources/<uuid>.bin`, with SHA-256 and media metadata.
+PDF and DOCX extraction produce separate text. Text exports derive from an explicitly selected immutable document version.
 
-SQLite enables foreign keys, WAL, and a five-second busy timeout. Schema creation runs in a transaction; `PRAGMA user_version` is 1.
-A newer schema version is refused. Add ordered migrations before changing this schema.
+SQLite enables foreign keys, WAL, and a five-second busy timeout. Ordered migrations currently end at `PRAGMA user_version=8`.
+Store::open refuses future schemas and creates a verified backup before an existing workspace upgrade.
 
 Compatibility finding: older schema-1 databases permit three document kinds. The current schema.sql permits seven but still sets user_version to 1.
-Store::open does not reconcile that difference. A fresh database and an existing database can therefore accept different kinds.
-P0 in the development plan must support both variants. The current documentation does not claim that this upgrade exists.
+Migration 2 reconciles both variants. Migration 3 adds revisions, provenance, and the expanded category set.
+Tests cover both schema-1 variants, submitted references, exact bytes, rollback, and reopen.
 
 Version creation writes and flushes a new file before committing its metadata. A failed database write removes that new file.
 A process crash between the file write and database commit can leave an unreferenced file; it must not be treated as a committed version.
 Missing referenced files produce an explicit load error. The app does not silently replace them with empty content.
 
-For a manual backup, close CowWorker and copy the entire workspace directory, including the database and documents.
-Local encryption, automatic backups, multi-device revisions, conflicts, tombstones, and synchronization remain open work.
+Task Center creates backups with VACUUM INTO, referenced immutable files, checksums, schema metadata, and table counts.
+Restore verifies the manifest and copies into a new directory. The original workspace remains intact.
+The desktop shell persists its selected copy in `active-workspace.json` and waits for the runner before switching storage.
+Local encryption, scheduled backups, multi-device conflicts, tombstones, and synchronization remain open work.
 
 See [architecture](ARCHITECTURE.md) and [environment](ENVIRONMENT.md).
 
 ## Planned records and ownership
 
-These records are not implemented. Detailed rules belong to [architecture](ARCHITECTURE.md).
+Migrations 3–8 implement these record families. Detailed target rules belong to [architecture](ARCHITECTURE.md).
+Text anchors, annotation records, price estimation, and some adapters remain incomplete; see the [implementation record](../management/V0.2.0_IMPLEMENTATION.md).
 Existing IDs, application history, submitted links, and document bytes must survive every migration.
 
 | Record | Planned responsibility |
@@ -101,7 +104,7 @@ Past/current employment is an explicit relationship, not an inferred application
 
 ## Proposed migration sequence
 
-Version numbers are planning targets. Before implementation, read the current version and account for concurrent accepted migrations.
+Versions 2–8 are implemented. Versions 9–10 remain planning targets. Read the current version before adding another migration.
 Application build version and SQLite schema version are separate counters.
 
 | Target schema | Phase | Changes and upgrade gate |

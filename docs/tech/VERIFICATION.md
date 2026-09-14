@@ -7,6 +7,57 @@ status: verified-windows
 
 # Verification of the first local workflow
 
+## Contextual workspace implementation — 2026-09-13
+
+The [implementation record](../management/V0.2.0_IMPLEMENTATION.md) lists current behavior and remaining phase requirements.
+The application version is 0.2.6; SQLite schema version is 8.
+
+| Check | Result | Evidence boundary |
+| --- | --- | --- |
+| TypeScript, Vite, Vitest | Passed; 5 tests | Frontend build and existing query/date contracts |
+| Rust core | 27 tests passed | Workflow, migrations, ownership, queue, imports, companies, logos, AI, usage, backup |
+| Packaged parser | 1 additional test passed | Windows executable child process; PDF, DOCX, Cyrillic, corrupt PDF |
+| Browser Playwright | 7 tests passed | Existing manual workflow, dialogs, sidebar, narrow layout; browser data stays separate |
+| Clippy and formatting | Passed | Workspace/all targets, warnings denied; Rustfmt and Prettier |
+| Windows debug build | Passed | Tauri executable with bundled frontend assets |
+| Windows native workflow | Passed | Real IPC, SQLite, original source retention, saved import review, Company Hub, AI proposal, usage, restart and restore |
+| Model directory and HTTP adapter | Passed with loopback fixture | Model discovery sends no workspace content; explicit model request records 19 reported tokens |
+| Interrupted dispatch | Passed | Process termination after server receives the request; restart waits without duplicate dispatch |
+| Backup restore | Passed | Separate verified directory; original workspace retained; selected copy survives process restart |
+| PDF/DOCX visual review | Passed for text fixture | Poppler rendered PDF; installed Word rendered DOCX to PDF; both page images inspected |
+| Synthetic usage query | Passed | 10,000 attempts; all/page/date queries took about 174 ms on this host |
+
+The native script writes `output/verification/native-report.json` and screenshots in that directory.
+It uses temporary workspace and WebView2 directories. All job and model data in that script are fictional.
+The tests never call a real AI account, send data to employers, or use production workspace files.
+The CPU for the query measurement was an Intel Core i7-13650HX with 20 logical processors.
+This measurement covers one synthetic ledger. It is not a general workspace performance guarantee.
+
+The core suite verifies both schema-1 document variants and the exact bytes of submitted versions.
+It also verifies failed migration rollback, consistent WAL snapshots, foreign keys, source hashes, stale proposals, and explicit empty overrides.
+Queue tests cover five independent inputs, required dependencies, cycles, cancellation, heartbeat ownership, and expired generations.
+AI tests distinguish operations from attempts and preserve usage after cancellation. Unknown transport outcomes cannot use Cancel → Retry to dispatch again.
+Company tests cover merge/relink, application stage preservation, logo failures, source retention, and deliberately empty notes.
+
+The PDF fixture uses an embedded Noto Sans font. Its source and OFL license are under `backend/assets/`.
+The DOCX renderer script could not run because LibreOffice was absent. Installed Word provided the visual rendering for this fixture.
+The output represents selected text content. This check does not establish reproduction of an imported document's original layout.
+
+The native parser test is explicitly ignored by the default core command because it requires a built executable.
+After a Windows debug build, run it with:
+
+```powershell
+cargo test -p cowworker-core --test parser_native -- --ignored
+```
+
+The command selects the parser integration target. `--ignored` runs its packaged-executable test.
+Native recovery and restore require the current `scripts/native-smoke.mjs` and its loopback HTTP fixture.
+
+Remaining acceptance gaps include native file-picker/drop/clipboard coverage, OCR, field annotations, broader research, and complete malformed/encrypted document fixtures.
+Real provider credentials, price reconciliation, live external company research, and non-loopback provider behavior remain unverified.
+This delivery does not include a new release installer test, signing test, update test, or macOS run.
+The historical results below retain their original scope. They do not substitute for these missing acceptance checks.
+
 ## Historical local results
 
 These results describe the first local workflow session. They are not a fresh run against every later commit.

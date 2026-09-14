@@ -5,6 +5,7 @@ import { tmpdir } from 'node:os';
 import { resolve, join } from 'node:path';
 import { createServer } from 'node:net';
 import { once } from 'node:events';
+import { createServer as createHttpServer } from 'node:http';
 
 if (process.platform !== 'win32')
   throw new Error('The native smoke test currently requires Windows WebView2.');
@@ -12,6 +13,44 @@ const dataDir = await mkdtemp(join(tmpdir(), 'cowworker-native-'));
 const output = resolve('output/verification');
 await mkdir(output, { recursive: true });
 const errors = [];
+const modelRequests = [];
+const fixtureServer = createHttpServer(async (req, res) => {
+  if (req.method === 'GET' && req.url === '/v1/models') {
+    res.setHeader('Content-Type', 'application/json');
+    res.end(JSON.stringify({ data: [{ id: 'fixture' }] }));
+    return;
+  }
+  let body = '';
+  for await (const chunk of req) body += chunk;
+  modelRequests.push({ url: req.url, body: JSON.parse(body) });
+  if (req.url === '/slow') return;
+  res.setHeader('Content-Type', 'application/json');
+  res.end(
+    JSON.stringify({
+      id: 'native-fixture',
+      choices: [
+        {
+          message: {
+            content: JSON.stringify({
+              summary: 'Fixture analysis using only the supplied vacancy.',
+              fields: { notes: 'Reviewed native AI note' },
+              content: null,
+            }),
+          },
+        },
+      ],
+      usage: { prompt_tokens: 12, completion_tokens: 7, total_tokens: 19 },
+    }),
+  );
+});
+fixtureServer.listen(0, '127.0.0.1');
+await once(fixtureServer, 'listening');
+const fixtureEndpoint = `http://127.0.0.1:${fixtureServer.address().port}`;
+const ipc = (page, command, args = {}) =>
+  page.evaluate(({ command, args }) => window.__TAURI_INTERNALS__.invoke(command, args), {
+    command,
+    args,
+  });
 async function start() {
   const server = createServer();
   server.listen(0, '127.0.0.1');
@@ -51,6 +90,7 @@ async function start() {
     await new Promise((r) => setTimeout(r, 100));
   }
   if (!page) throw new Error('CowWorker did not create a WebView.');
+  page.setDefaultTimeout(15000);
   page.on('pageerror', (e) => errors.push(e.message));
   await expect(page.getByText('Local workspace', { exact: true })).toBeVisible();
   return { page, browser, processHandle };
@@ -133,6 +173,144 @@ try {
     reopened.getByRole('button', { name: /Follow up with the recruiter/ }),
   ).toBeVisible();
   await reopened.screenshot({ path: join(output, 'windows-today.png'), fullPage: true });
+  console.log('Checking native import, Company Hub, AI runtime, and backup.');
+  await reopened.getByRole('button', { name: 'Universal Add', exact: true }).click();
+  await reopened
+    .getByLabel('Paste text', { exact: true })
+    .fill('Native import fixture\nТочный импортированный текст');
+  await reopened.getByRole('button', { name: 'Add to import queue' }).click();
+  await expect(reopened.getByRole('button', { name: 'Review Pasted document' })).toBeVisible({
+    timeout: 45000,
+  });
+  await reopened.getByRole('button', { name: 'Review Pasted document' }).click();
+  await reopened.getByLabel('Category', { exact: true }).selectOption('reference');
+  await reopened.getByRole('button', { name: 'Keep review draft' }).click();
+  await reopened.getByRole('button', { name: 'Close dialog' }).click();
+  const savedDraft = (await ipc(reopened, 'list_imports', { offset: 0 }))[0];
+  expect(savedDraft.draft.kind).toBe('reference');
+  await ipc(reopened, 'review_import', {
+    id: savedDraft.id,
+    expectedRevision: savedDraft.revision,
+    draft: savedDraft.draft,
+    save: true,
+  });
+  await reopened.getByRole('button', { name: 'Companies', exact: true }).click();
+  await expect(reopened.getByRole('button', { name: /Northstar Labs · QA example/ })).toBeVisible();
+  await reopened.getByRole('button', { name: /Northstar Labs · QA example/ }).click();
+  await expect(reopened.getByRole('heading', { name: 'Employment history' })).toBeVisible();
+  await reopened.screenshot({ path: join(output, 'windows-companies.png'), fullPage: true });
+  await reopened.getByRole('button', { name: 'Vacancies', exact: true }).click();
+  await reopened.getByRole('button', { name: '✦ AI', exact: true }).click();
+  await reopened.getByRole('button', { name: 'AI settings', exact: true }).click();
+  await reopened.getByLabel('provider', { exact: true }).fill('Native fixture');
+  await reopened.getByLabel('model', { exact: true }).fill('fixture');
+  await reopened
+    .getByLabel('Full completion endpoint')
+    .fill(`${fixtureEndpoint}/v1/chat/completions`);
+  await reopened.getByLabel('Local model on this computer').check();
+  await reopened.getByRole('button', { name: 'Save AI settings', exact: true }).click();
+  expect(await ipc(reopened, 'discover_models')).toEqual(['fixture']);
+  expect(modelRequests).toHaveLength(0);
+  await reopened.getByRole('button', { name: '✦ Preview AI Operation', exact: true }).click();
+  await reopened
+    .getByLabel('Allow this operation to send the displayed data to this destination.')
+    .check();
+  await reopened.getByRole('button', { name: '✦ Run AI Operation', exact: true }).click();
+  await expect(
+    reopened.getByText('Fixture analysis using only the supplied vacancy.', { exact: true }),
+  ).toBeVisible({ timeout: 45000 });
+  await reopened.getByRole('button', { name: 'Review suggested changes', exact: true }).click();
+  await reopened.getByLabel('Replace my existing values when applying field proposals').check();
+  await reopened.getByRole('button', { name: 'Apply proposal', exact: true }).click();
+  await expect
+    .poll(async () => (await ipc(reopened, 'load_workspace')).vacancies[0].notes)
+    .toBe('Reviewed native AI note');
+  await reopened.getByRole('button', { name: 'Close AI', exact: true }).click();
+  await reopened.getByRole('button', { name: 'AI Usage', exact: true }).click();
+  await expect(reopened.getByRole('heading', { name: 'Attempt history' })).toBeVisible();
+  const ledger = await ipc(reopened, 'ai_usage', {
+    filter: {
+      from: null,
+      to: null,
+      provider: null,
+      model: null,
+      feature: null,
+      entityId: null,
+      offset: 0,
+      limit: 25,
+    },
+  });
+  expect(ledger.totals.totalTokens).toBe(19);
+  expect(ledger.totals.attempts).toBe(1);
+  expect(ledger.costs[0].actualMicros).toBe(0);
+  await reopened.screenshot({ path: join(output, 'windows-ai-usage.png'), fullPage: true });
+  const backupId = await ipc(reopened, 'enqueue_backup');
+  await expect
+    .poll(
+      async () =>
+        (await ipc(reopened, 'list_tasks', { offset: 0, limit: 100 })).find(
+          (t) => t.id === backupId,
+        )?.status,
+      { timeout: 45000 },
+    )
+    .toBe('completed');
+  const backupTask = (await ipc(reopened, 'list_tasks', { offset: 0, limit: 100 })).find(
+    (t) => t.id === backupId,
+  );
+  const manifest = JSON.parse(
+    await readFile(join(backupTask.result.directory, 'manifest.json'), 'utf8'),
+  );
+  expect(manifest.schemaVersion).toBe(8);
+  expect(Object.keys(manifest.files).some((p) => p.startsWith('sources/'))).toBe(true);
+  console.log('Checking native interruption after model dispatch.');
+  const config = await ipc(reopened, 'provider_config');
+  await ipc(reopened, 'configure_provider', {
+    config: { ...config, endpoint: `${fixtureEndpoint}/slow` },
+    secret: null,
+  });
+  const vacancy = (await ipc(reopened, 'load_workspace')).vacancies[0];
+  const request = {
+    operationType: 'job-analysis',
+    entityType: 'vacancy',
+    entityId: vacancy.id,
+    baseRevision: vacancy.revision,
+    baseVersion: null,
+    instruction: 'Fictional recovery check',
+  };
+  const preview = await ipc(reopened, 'preview_ai', { request });
+  await ipc(reopened, 'start_ai', { request, scope: preview.scope, key: 'native-interruption' });
+  await expect.poll(() => modelRequests.filter((r) => r.url === '/slow').length).toBe(1);
+  await stop(session);
+  session = null;
+  session = await start();
+  await expect
+    .poll(
+      async () =>
+        (await ipc(session.page, 'list_tasks', { offset: 0, limit: 100 })).find(
+          (t) => t.kind === 'ai-operation' && t.status === 'waiting',
+        )?.waitingReason,
+      { timeout: 45000 },
+    )
+    .toBe('unknown-remote-outcome');
+  expect(modelRequests.filter((r) => r.url === '/slow')).toHaveLength(1);
+  expect((await ipc(session.page, 'list_imports', { offset: 0 }))[0].status).toBe('saved');
+  console.log('Checking native restore and persistent workspace switch.');
+  const restored = await ipc(session.page, 'restore_workspace', {
+    directory: backupTask.result.directory,
+  });
+  expect(restored).toContain('restored');
+  const restoredWorkspace = await ipc(session.page, 'load_workspace');
+  expect(restoredWorkspace.vacancies[0].notes).toBe('Reviewed native AI note');
+  expect((await ipc(session.page, 'list_imports', { offset: 0 }))[0].status).toBe('saved');
+  expect(JSON.parse(await readFile(join(dataDir, 'active-workspace.json'), 'utf8'))).toBe(
+    restored.split(/[\\/]/).at(-1),
+  );
+  await stop(session);
+  session = null;
+  session = await start();
+  expect((await ipc(session.page, 'load_workspace')).vacancies[0].notes).toBe(
+    'Reviewed native AI note',
+  );
   expect(errors).toEqual([]);
   const report = {
     passed: true,
@@ -148,16 +326,51 @@ try {
       'immutable submitted version after editing',
       'Today due actions',
       'no frontend runtime errors',
+      'persistent native import review and source preservation',
+      'manual Company Hub with related applications',
+      'native HTTP AI adapter against a loopback fixture',
+      'model discovery without model execution or workspace transmission',
+      'explicit AI scope approval and guarded proposal application',
+      'central usage ledger with reported token totals',
+      'queued workspace backup with source hashes',
+      'process interruption after dispatch does not duplicate the model call',
+      'verified restore to a separate directory and active workspace persistence across restart',
     ],
     screenshots: [
       'windows-vacancies.png',
       'windows-sidebar-hidden.png',
       'windows-application.png',
       'windows-today.png',
+      'windows-companies.png',
+      'windows-ai-usage.png',
     ],
   };
   await writeFile(join(output, 'native-report.json'), JSON.stringify(report, null, 2));
   console.log(JSON.stringify(report, null, 2));
+} catch (error) {
+  if (session) {
+    await session.page
+      .screenshot({ path: join(output, 'windows-failure.png'), fullPage: true })
+      .catch(() => {});
+    await writeFile(
+      join(output, 'native-failure.json'),
+      JSON.stringify(
+        {
+          error: String(error),
+          dataDir,
+          body: await session.page
+            .locator('body')
+            .innerText()
+            .catch(() => ''),
+        },
+        null,
+        2,
+      ),
+    );
+  }
+  throw error;
 } finally {
   if (session) await stop(session);
+  fixtureServer.closeAllConnections();
+  await new Promise((resolve) => fixtureServer.close(resolve));
 }

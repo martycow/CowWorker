@@ -60,22 +60,24 @@ The IDs in this registry are permanent from initialization onward.
 | DEP-0002 | Install and uninstall the Windows package on a clean machine.                                        | 09-13-2026 | Open              |
 | DEP-0003 | Validate signed packages and the update channel.                                                     | 09-13-2026 | Open              |
 | UI-0004  | Validate assistive technology, contrast, and large real workspaces beyond the current test coverage. | 09-13-2026 | Open              |
-| FT-0005  | Add complete workspace backup and restoration with integrity checks.                                 | 09-13-2026 | Open              |
+| FT-0005  | Add complete workspace backup and restoration with integrity checks.                                 | 09-13-2026 | Completed 09-13-2026: verified WAL snapshot, asset manifest, separate restore, native workspace switch and restart. See V0.2.0_IMPLEMENTATION.md. |
 | FT-0006  | Add PDF and DOCX import and export with parser limits and preview checks.                            | 09-13-2026 | Open              |
 | FT-0007  | Add AI provider discovery and an evidence-based analysis contract.                                   | 09-13-2026 | Open              |
 | FT-0008  | Add a user-reviewed proposal flow for AI document changes.                                           | 09-13-2026 | Open              |
 | PL-0009  | Define synchronization identity, revisions, conflicts, and server boundaries.                        | 09-13-2026 | Open              |
 | FT-0010  | After local scheduling rules are established, add calendar and notification adapters.                | 09-13-2026 | Open              |
-| IMP-0011 | Reconcile baseline contracts and add ordered migrations for both schema-1 document variants. | 09-13-2026 | Reserved for development plan P0 |
-| FT-0012 | Add immutable source assets, field ownership, revisions, and reviewed proposals. | 09-13-2026 | Reserved for development plan P1 |
-| FT-0013 | Add the persistent Rust task queue and global Task Center. | 09-13-2026 | Reserved for development plan P2 |
-| FT-0014 | Add Company identity, legacy migration, relationships, and the manual Company Hub. | 09-13-2026 | Reserved for development plan P3 |
-| FT-0015 | Add Universal Import acquisition, staged processing, and persistent review. | 09-13-2026 | Reserved for development plan P5, with FT-0006 |
-| FT-0016 | Add source-backed company research, refresh, and managed logos. | 09-13-2026 | Reserved for development plan P6 |
-| UI-0017 | Add AI Usage queries, summaries, charts, and attempt history. | 09-13-2026 | Reserved for development plan P8 |
-| IMP-0018 | Validate the integrated workflow, migration recovery, and release evidence. | 09-13-2026 | Reserved for development plan P9 |
+| IMP-0011 | Reconcile baseline contracts and add ordered migrations for both schema-1 document variants. | 09-13-2026 | Completed 09-13-2026: ordered migrations, both schema-1 fixtures, rollback, immutable submitted bytes, lazy content and work-mode contract. |
+| FT-0012 | Add immutable source assets, field ownership, revisions, and reviewed proposals. | 09-13-2026 | In development 09-13-2026: see V0.2.0_IMPLEMENTATION.md |
+| FT-0013 | Add the persistent Rust task queue and global Task Center. | 09-13-2026 | In development 09-13-2026: see V0.2.0_IMPLEMENTATION.md |
+| FT-0014 | Add Company identity, legacy migration, relationships, and the manual Company Hub. | 09-13-2026 | In development 09-13-2026: see V0.2.0_IMPLEMENTATION.md |
+| FT-0015 | Add Universal Import acquisition, staged processing, and persistent review. | 09-13-2026 | In development 09-13-2026, with FT-0006: see V0.2.0_IMPLEMENTATION.md |
+| FT-0016 | Add source-backed company research, refresh, and managed logos. | 09-13-2026 | In development 09-13-2026: see V0.2.0_IMPLEMENTATION.md |
+| UI-0017 | Add AI Usage queries, summaries, charts, and attempt history. | 09-13-2026 | In development 09-13-2026: see V0.2.0_IMPLEMENTATION.md |
+| IMP-0018 | Validate the integrated workflow, migration recovery, and release evidence. | 09-13-2026 | In development 09-13-2026: see V0.2.0_IMPLEMENTATION.md |
 
 Planning note, 09-13-2026: FT-0007 covers the central AI runtime and usage ledger in P4.
 FT-0008 covers reviewed contextual AI in P7. FT-0006 retains its PDF/DOCX export scope alongside P5 import work.
+Implementation note, 09-13-2026: FT-0006, FT-0007, and FT-0008 moved from Open to In development.
+The [implementation record](V0.2.0_IMPLEMENTATION.md) records delivered behavior and remaining acceptance conditions for all active phases.
 The user marked DEP-0002 done in TASKS.md before this audit. That mark is preserved.
 Its execution details are not available in the current verification record. This note does not claim an independent installer check.

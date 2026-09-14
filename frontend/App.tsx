@@ -27,6 +27,13 @@ import {
   CircleHelp,
 } from 'lucide-react';
 import { api, loadExamples, native } from './api';
+import { TaskCenter } from './tasks/TaskCenter';
+import { CompanyHub } from './companies/CompanyHub';
+import { UniversalAdd } from './import/UniversalAdd';
+import { AiPanel, type AiContext } from './ai/AiPanel';
+import { AiUsage } from './ai/AiUsage';
+import { SourceList } from './SourceList';
+import { invoke } from '@tauri-apps/api/core';
 import { Badge, CompanyMark, Empty, Field, Modal } from './components';
 import { ApplicationForm, DocumentForm, VacancyForm } from './forms';
 import {
@@ -43,7 +50,17 @@ import {
   type Workspace,
 } from './types';
 
-type Page = 'Today' | 'Vacancies' | 'Applications' | 'Documents' | 'Interviews' | 'Glossary' | 'Profile' | 'Settings';
+type Page =
+  | 'AI Usage'
+  | 'Companies'
+  | 'Today'
+  | 'Vacancies'
+  | 'Applications'
+  | 'Documents'
+  | 'Interviews'
+  | 'Glossary'
+  | 'Profile'
+  | 'Settings';
 
 type Editor =
   | { kind: 'vacancy'; record?: Vacancy }
@@ -55,9 +72,13 @@ const navigation = [
   { name: 'Vacancies', icon: BriefcaseBusiness },
   { name: 'Applications', icon: CheckCheck },
   { name: 'Documents', icon: FileText },
+  { name: 'Companies', icon: BriefcaseBusiness },
+  { name: 'AI Usage', icon: Star },
 ] as const;
 
 const captions: Record<Page, string> = {
+  'AI Usage': 'Model operations, attempts, and reported usage.',
+  Companies: 'Companies, opportunities, and your employment history.',
   Today: 'Keep your next move in sight.',
   Vacancies: 'Vacancies manager.',
   Applications: 'Job applications manager.',
@@ -69,6 +90,7 @@ const captions: Record<Page, string> = {
 };
 
 export function App() {
+  const [companyContext, setCompanyContext] = useState<AiContext | null>(null);
   const [workspace, setWorkspace] = useState<Workspace | null>(null);
   const [page, setPage] = useState<Page>('Vacancies');
   const [error, setError] = useState('');
@@ -173,21 +195,7 @@ export function App() {
       setSelected(id);
     }, 'Application is ready to prepare.');
   const updateStatus = (vacancy: Vacancy, next: Vacancy['status']) =>
-    void act(
-      () =>
-        api.vacancy({
-          id: vacancy.id,
-          title: vacancy.title,
-          company: vacancy.company,
-          location: vacancy.location,
-          workMode: vacancy.workMode,
-          sourceUrl: vacancy.sourceUrl,
-          description: vacancy.description,
-          notes: vacancy.notes,
-          status: next,
-        }),
-      'Vacancy updated.',
-    );
+    void act(() => api.status(vacancy.id, vacancy.revision, next), 'Vacancy updated.');
   const vacancies = workspace
     ? filterVacancies(workspace.vacancies, query, status, mode, sort)
     : [];
@@ -268,6 +276,31 @@ export function App() {
       )}
       <main>
         <div className="topbar">
+          <TaskCenter />
+          <UniversalAdd onChange={reload} />
+          <AiPanel
+            onChange={reload}
+            context={
+              page === 'Vacancies' && chosenVacancy
+                ? {
+                    entityType: 'vacancy',
+                    entityId: chosenVacancy.id,
+                    baseRevision: chosenVacancy.revision,
+                    label: chosenVacancy.title,
+                  }
+                : page === 'Documents' && chosenDocument
+                  ? {
+                      entityType: 'document',
+                      entityId: chosenDocument.id,
+                      baseRevision: chosenDocument.revision,
+                      baseVersion: chosenDocument.versions[0]?.id,
+                      label: chosenDocument.title,
+                    }
+                  : page === 'Companies'
+                    ? companyContext
+                    : null
+            }
+          />
           <div className="workspace-label">
             <button
               ref={toggleRef}
@@ -556,6 +589,7 @@ export function App() {
                       </section>
                       <section className="detail-section">
                         <h3>Your notes</h3>
+                        <SourceList entityId={chosenVacancy.id} />
                         <p className="preserve-text">
                           {chosenVacancy.notes || 'Keep your questions and impressions here.'}
                         </p>
@@ -768,6 +802,7 @@ export function App() {
                     <DocumentDetail
                       key={`${chosenDocument.id}-${chosenDocument.versions.length}`}
                       document={chosenDocument}
+                      onChange={reload}
                       onEdit={() => openEditor({ kind: 'document', record: chosenDocument })}
                       onClose={() => setSelected(null)}
                     />
@@ -871,6 +906,10 @@ export function App() {
                 onSave={(profile) => act(() => api.profile(profile), 'Profile saved.')}
               />
             )}
+            {page === 'Companies' && (
+              <CompanyHub workspace={workspace} onChange={reload} onSelect={setCompanyContext} />
+            )}
+            {page === 'AI Usage' && <AiUsage />}
             {page === 'Settings' && (
               <div className="settings-content">
                 <section>
@@ -1098,17 +1137,37 @@ function ApplicationDetail({
 }
 function DocumentDetail({
   document: d,
+  onChange,
   onEdit,
   onClose,
 }: {
   document: CareerDocument;
+  onChange: () => Promise<void>;
   onEdit: () => void;
   onClose: () => void;
 }) {
   const [versionId, setVersionId] = useState(d.versions[0]?.id);
   const v = d.versions.find((v) => v.id === versionId) ?? d.versions[0];
+  const [body, setBody] = useState<{ id: string; text: string } | null>(null);
+  const [bodyError, setBodyError] = useState('');
+  useEffect(() => {
+    let active = true;
+    setBodyError('');
+    void api
+      .content(v.id)
+      .then((text) => {
+        if (active) setBody({ id: v.id, text });
+      })
+      .catch((e) => {
+        if (active) setBodyError(String(e));
+      });
+    return () => {
+      active = false;
+    };
+  }, [v.id]);
   const download = () => {
-    const blob = new Blob([v.content], { type: 'text/plain;charset=utf-8' });
+    if (body?.id !== v.id) return;
+    const blob = new Blob([body.text], { type: 'text/plain;charset=utf-8' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
@@ -1141,12 +1200,77 @@ function DocumentDetail({
             </option>
           ))}
         </select>
-        <button aria-label="Export document version" onClick={download}>
+        <button
+          aria-label="Export document version"
+          disabled={body?.id !== v.id}
+          onClick={download}
+        >
           <Download size={16} />
           Export .txt
         </button>
+        {native &&
+          ['pdf', 'docx'].map((format) => (
+            <button
+              key={format}
+              onClick={() =>
+                void invoke<number[]>('export_document', { versionId: v.id, format })
+                  .then((bytes) => {
+                    const url = URL.createObjectURL(
+                      new Blob([new Uint8Array(bytes)], {
+                        type:
+                          format === 'pdf'
+                            ? 'application/pdf'
+                            : 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+                      }),
+                    );
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `${d.title.replace(/[<>:"/\\|?*]/g, '_')}-v${v.number}.${format}`;
+                    a.click();
+                    setTimeout(() => URL.revokeObjectURL(url), 1000);
+                  })
+                  .catch((e) => setBodyError(String(e)))
+              }
+            >
+              Export .{format}
+            </button>
+          ))}
       </div>
-      <pre className="document-paper">{v.content}</pre>
+      {bodyError && (
+        <p role="alert" className="error">
+          {bodyError}
+        </p>
+      )}
+      {native && (
+        <div className="version-toolbar">
+          <label>
+            Document category{' '}
+            <select
+              value={d.kind}
+              onChange={(e) =>
+                void invoke('correct_document', {
+                  id: d.id,
+                  expectedRevision: d.revision,
+                  title: d.title,
+                  kind: e.target.value,
+                })
+                  .then(onChange)
+                  .catch((e) => setBodyError(String(e)))
+              }
+            >
+              {Object.entries(documentLabels).map(([value, label]) => (
+                <option key={value} value={value}>
+                  {label}
+                </option>
+              ))}
+            </select>
+          </label>
+        </div>
+      )}
+      <SourceList entityId={d.id} />
+      <pre className="document-paper">
+        {body?.id === v.id ? body.text : bodyError ? '' : 'Loading document…'}
+      </pre>
     </aside>
   );
 }

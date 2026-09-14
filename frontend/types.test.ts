@@ -14,6 +14,8 @@ const record = (
   workMode: Vacancy['workMode'],
 ): Vacancy => ({
   id,
+  revision: 1,
+  structured: {},
   title: 'Engineer',
   company,
   status,

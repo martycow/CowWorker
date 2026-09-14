@@ -14,15 +14,21 @@ export function Modal({
   children,
   onClose,
   busy = false,
+  savedRevision = 0,
 }: {
   title: string;
   children: ReactNode;
   onClose: () => void;
   busy?: boolean;
+  savedRevision?: number;
 }) {
   const ref = useRef<HTMLDialogElement>(null);
   const [dirty, setDirty] = useState(false);
   const [confirmDiscard, setConfirmDiscard] = useState(false);
+  useEffect(() => {
+    setDirty(false);
+    setConfirmDiscard(false);
+  }, [savedRevision]);
   const requestClose = () => {
     if (busy) return;
     if (dirty) setConfirmDiscard(true);

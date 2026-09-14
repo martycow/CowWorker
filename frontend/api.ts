@@ -14,6 +14,11 @@ function readDemo(): Workspace {
   const value = localStorage.getItem(demoKey);
   if (!value) return empty();
   const data = JSON.parse(value) as Workspace;
+  for (const vacancy of data.vacancies ?? []) {
+    vacancy.revision ??= 1;
+    vacancy.structured ??= {};
+  }
+  for (const document of data.documents ?? []) document.revision ??= 1;
   if (
     data.schemaVersion !== 1 ||
     !Array.isArray(data.vacancies) ||
@@ -36,6 +41,30 @@ function writeDemo<T>(action: (data: Workspace) => T): Promise<T> {
 const uid = () => crypto.randomUUID();
 const time = () => new Date().toISOString();
 export const api = {
+  content: (versionId: string): Promise<string> =>
+    native
+      ? invoke('document_content', { versionId })
+      : Promise.resolve().then(() => {
+          const version = readDemo()
+            .documents.flatMap((d) => d.versions)
+            .find((v) => v.id === versionId);
+          if (!version || version.content === null)
+            throw new Error(
+              'Document version could not be read. Restore its file from your backup.',
+            );
+          return version.content;
+        }),
+  status: (vacancyId: string, expectedRevision: number, status: string): Promise<void> =>
+    native
+      ? invoke('patch_vacancy', { vacancyId, expectedRevision, fields: { status } })
+      : writeDemo((data) => {
+          const v = data.vacancies.find((v) => v.id === vacancyId);
+          if (!v || v.revision !== expectedRevision)
+            throw new Error('Revision conflict. Reload the vacancy.');
+          v.status = status as typeof v.status;
+          v.revision++;
+          v.updatedAt = time();
+        }),
   source: (vacancyId: string): Promise<void> => invoke('open_source', { vacancyId }),
   load: (): Promise<Workspace> =>
     native ? invoke('load_workspace') : Promise.resolve().then(readDemo),
@@ -60,12 +89,16 @@ export const api = {
             throw new Error('This source URL is already saved. Open the existing vacancy.');
           const old = data.vacancies.find((v) => v.id === input.id);
           if (input.id && !old) throw new Error('Vacancy no longer exists.');
+          if (old && old.revision !== input.expectedRevision)
+            throw new Error('Revision conflict. Reload and review your draft.');
           const record = {
             ...input,
             title: input.title.trim(),
             company: input.company.trim(),
             sourceUrl,
             id: old?.id ?? uid(),
+            revision: (old?.revision ?? 0) + 1,
+            structured: old?.structured ?? {},
             createdAt: old?.createdAt ?? time(),
             updatedAt: time(),
           };
@@ -80,11 +113,14 @@ export const api = {
             throw new Error('Document title and content are required.');
           let doc = data.documents.find((d) => d.id === input.id);
           if (input.id && !doc) throw new Error('Document no longer exists.');
+          if (doc && doc.revision !== input.expectedRevision)
+            throw new Error('Revision conflict. Reload and review your draft.');
           if (!doc) {
-            doc = { id: uid(), title: input.title, kind: input.kind, versions: [] };
+            doc = { id: uid(), revision: 0, title: input.title, kind: input.kind, versions: [] };
             data.documents.push(doc);
           }
           doc.title = input.title;
+          doc.revision++;
           doc.versions.unshift({
             id: uid(),
             number: (doc.versions[0]?.number ?? 0) + 1,
@@ -192,7 +228,7 @@ export async function loadExamples(): Promise<void> {
       'Frontend Developer',
       'Cinder Systems',
       'San Francisco, CA',
-      'On-Site',
+      'On-site',
       'Create useful, accessible dashboards with a multidisciplinary team.',
     ],
     [

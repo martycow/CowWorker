@@ -1,4 +1,5 @@
-import { useState, type FormEvent } from 'react';
+import { useEffect, useState, type FormEvent } from 'react';
+import { api } from './api';
 import { FileUp, LockKeyhole } from 'lucide-react';
 import { Field } from './components';
 import {
@@ -19,6 +20,7 @@ export function VacancyForm({ vacancy, onSave, busy }: { vacancy?: Vacancy } & S
     vacancy
       ? {
           id: vacancy.id,
+          expectedRevision: vacancy.revision,
           title: vacancy.title,
           company: vacancy.company,
           location: vacancy.location,
@@ -132,12 +134,36 @@ export function DocumentForm({
   const [kind, setKind] = useState<DocumentKind>(document?.kind ?? 'resume');
   const [content, setContent] = useState(document?.versions[0]?.content ?? '');
   const [importError, setImportError] = useState('');
-  const [reading, setReading] = useState(false);
+  const [reading, setReading] = useState(!!document);
+  useEffect(() => {
+    if (!document) return;
+    let active = true;
+    void api
+      .content(document.versions[0].id)
+      .then((text) => {
+        if (active) setContent(text);
+      })
+      .catch((e) => {
+        if (active) setImportError(String(e));
+      })
+      .finally(() => {
+        if (active) setReading(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, [document]);
   return (
     <form
       onSubmit={(e) => {
         e.preventDefault();
-        void onSave({ id: document?.id, title, kind, content });
+        void onSave({
+          id: document?.id,
+          expectedRevision: document?.revision,
+          title,
+          kind,
+          content,
+        });
       }}
     >
       <div className="form-grid">
@@ -181,7 +207,9 @@ export function DocumentForm({
                   if (file.size > 1_000_000) throw new Error('Choose a file smaller than 1 MB.');
                   if (!/\.(txt|md)$/i.test(file.name))
                     throw new Error('Choose a .txt or .md file.');
-                  const text = await file.text();
+                  const text = new TextDecoder('utf-8', { fatal: true }).decode(
+                    await file.arrayBuffer(),
+                  );
                   if (text.includes('\u0000')) throw new Error('Choose a UTF-8 text file.');
                   setContent(text);
                   if (!title) setTitle(file.name.replace(/\.[^.]+$/, ''));
@@ -204,6 +232,7 @@ export function DocumentForm({
         <Field wide label="Content">
           <textarea
             className="document-editor"
+            disabled={reading}
             required
             rows={15}
             maxLength={1000000}

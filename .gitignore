@@ -1,6 +1,8 @@
 ### C#
 # Build results
 [Bb]in/
+!backend/src/bin/
+!backend/src/bin/*.rs
 [Oo]bj/
 
 # Visual Studio cache/options directory
@@ -157,6 +159,7 @@ playground.xcworkspace
 *.xcscmblueprint
 
 ### CowWorker
+.cowworker-build.lock
 node_modules/
 dist/
 src-tauri/gen/

@@ -6,8 +6,10 @@ use uuid::Uuid;
 
 type Result<T> = std::result::Result<T, String>;
 pub struct Store {
-    db: Connection,
-    documents_path: PathBuf,
+    pub(crate) db: Connection,
+    pub(crate) documents_path: PathBuf,
+    pub(crate) path: PathBuf,
+    pub(crate) extractor: Option<PathBuf>,
 }
 
 fn error(e: impl std::fmt::Display) -> String {
@@ -52,22 +54,34 @@ impl Store {
         let version: i64 = db
             .query_row("PRAGMA user_version", [], |r| r.get(0))
             .map_err(error)?;
-        match version {
-            0 => {
-                let tx = db.unchecked_transaction().map_err(error)?;
-                tx.execute_batch(include_str!("schema.sql"))
-                    .map_err(error)?;
-                tx.commit().map_err(error)?;
-            }
-            1 => (),
-            _ => return Err("This workspace was created by a newer CowWorker version.".into()),
+        if version > crate::migrations::CURRENT_VERSION {
+            return Err("This workspace was created by a newer CowWorker version. Update CowWorker before opening it.".into());
         }
-        Ok(Self { db, documents_path })
+        if version > 0 && version < crate::migrations::CURRENT_VERSION {
+            crate::backup::create(
+                &db,
+                &path,
+                &path
+                    .join("backups")
+                    .join(format!("before-schema-{version}-{}", id())),
+            )?;
+        }
+        crate::migrations::run(&db)?;
+        Ok(Self {
+            db,
+            documents_path,
+            path,
+            extractor: None,
+        })
+    }
+
+    pub fn use_extractor(&mut self, executable: PathBuf) {
+        self.extractor = Some(executable);
     }
 
     pub fn workspace(&self) -> Result<Workspace> {
         Ok(Workspace {
-            schema_version: 1,
+            schema_version: crate::migrations::CURRENT_VERSION,
             vacancies: self.vacancies()?,
             documents: self.documents()?,
             applications: self.applications()?,
@@ -75,8 +89,8 @@ impl Store {
         })
     }
 
-    fn vacancies(&self) -> Result<Vec<Vacancy>> {
-        let mut stmt = self.db.prepare("SELECT id,title,company,location,work_mode,source_url,description,notes,status,created_at,updated_at FROM vacancies ORDER BY created_at DESC,id").map_err(error)?;
+    pub(crate) fn vacancies(&self) -> Result<Vec<Vacancy>> {
+        let mut stmt = self.db.prepare("SELECT id,title,company,location,work_mode,source_url,description,notes,status,created_at,updated_at,revision,structured,company_id FROM vacancies ORDER BY created_at DESC,id").map_err(error)?;
         let records = stmt
             .query_map([], |r| {
                 Ok(Vacancy {
@@ -91,6 +105,9 @@ impl Store {
                     status: r.get(8)?,
                     created_at: r.get(9)?,
                     updated_at: r.get(10)?,
+                    revision: r.get(11)?,
+                    structured: serde_json::from_str(&r.get::<_, String>(12)?).unwrap_or_default(),
+                    company_id: r.get(13)?,
                 })
             })
             .map_err(error)?
@@ -100,6 +117,29 @@ impl Store {
     }
 
     pub fn save_vacancy(&mut self, input: VacancyInput) -> Result<String> {
+        if let Some(ref vacancy_id) = input.id {
+            let current = self
+                .vacancies()?
+                .into_iter()
+                .find(|v| &v.id == vacancy_id)
+                .ok_or("Vacancy no longer exists.")?;
+            let expected = input
+                .expected_revision
+                .ok_or("Reload the vacancy before editing: expected revision is required.")?;
+            let old = serde_json::to_value(&current).map_err(error)?;
+            let new = serde_json::to_value(&input).map_err(error)?;
+            let fields = new
+                .as_object()
+                .ok_or("Invalid vacancy")?
+                .iter()
+                .filter(|(k, v)| {
+                    !["id", "expectedRevision"].contains(&k.as_str()) && old.get(*k) != Some(*v)
+                })
+                .map(|(k, v)| (k.clone(), v.clone()))
+                .collect();
+            self.patch_vacancy(vacancy_id, expected, fields)?;
+            return Ok(vacancy_id.clone());
+        }
         let title = required(&input.title, "Role", 300)?;
         let company = required(&input.company, "Company", 300)?;
         limited(&input.location, "Location", 500)?;
@@ -145,17 +185,10 @@ impl Store {
             return Err("This source URL is already saved. Open the existing vacancy.".into());
         }
         let time = now();
-        if let Some(vacancy_id) = input.id {
-            let changed = self.db.execute("UPDATE vacancies SET title=?1,company=?2,location=?3,work_mode=?4,source_url=?5,description=?6,notes=?7,status=?8,updated_at=?9 WHERE id=?10", params![title,company,input.location,input.work_mode,source,input.description,input.notes,input.status,time,vacancy_id]).map_err(error)?;
-            if changed == 0 {
-                return Err("Vacancy no longer exists.".into());
-            }
-            Ok(vacancy_id)
-        } else {
-            let vacancy_id = id();
-            self.db
+        let vacancy_id = id();
+        self.db
                 .execute(
-                    "INSERT INTO vacancies VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?10)",
+                    "INSERT INTO vacancies(id,title,company,location,work_mode,source_url,description,notes,status,created_at,updated_at) VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?10)",
                     params![
                         vacancy_id,
                         title,
@@ -170,14 +203,13 @@ impl Store {
                     ],
                 )
                 .map_err(error)?;
-            Ok(vacancy_id)
-        }
+        Ok(vacancy_id)
     }
 
     fn documents(&self) -> Result<Vec<Document>> {
         let mut stmt = self
             .db
-            .prepare("SELECT id,title,kind FROM documents ORDER BY title,id")
+            .prepare("SELECT id,title,kind,revision FROM documents ORDER BY title,id")
             .map_err(error)?;
         let mut docs = stmt
             .query_map([], |r| {
@@ -185,6 +217,7 @@ impl Store {
                     id: r.get(0)?,
                     title: r.get(1)?,
                     kind: r.get(2)?,
+                    revision: r.get(3)?,
                     versions: vec![],
                 })
             })
@@ -209,7 +242,7 @@ impl Store {
                 if file_name != format!("{id}.txt") || Uuid::parse_str(&id).is_err() {
                     return Err("Invalid document file reference.".into());
                 }
-                let content = fs::read_to_string(self.documents_path.join(file_name)).map_err(|_| format!("Document version {number} of '{}' could not be read. Restore its file from your backup.", doc.title))?;
+                let content = None;
                 doc.versions.push(DocumentVersion {
                     id,
                     number,
@@ -222,19 +255,57 @@ impl Store {
     }
 
     pub fn save_document(&mut self, input: DocumentInput) -> Result<String> {
+        self.save_document_review(input, None)
+    }
+
+    pub(crate) fn save_document_review(
+        &mut self,
+        input: DocumentInput,
+        proposal: Option<&str>,
+    ) -> Result<String> {
         let title = required(&input.title, "Document title", 300)?;
         required(&input.content, "Document content", 1_000_000)?;
         one_of(
             &input.kind,
-            &["resume", "cover-letter", "note", "job-offer", "agreement", "tax-related", "other"],
+            &[
+                "resume",
+                "cover-letter",
+                "note",
+                "job-offer",
+                "agreement",
+                "tax-related",
+                "other",
+                "job-description",
+                "portfolio",
+                "reference",
+                "unknown",
+            ],
             "document type",
         )?;
         let document_id = input.id.clone().unwrap_or_else(id);
         let version_id = id();
         let file_name = format!("{version_id}.txt");
         let file_path = self.documents_path.join(&file_name);
-        let tx = self.db.transaction().map_err(error)?;
+        let tx = self.db.savepoint().map_err(error)?;
+        if let Some(proposal) = proposal {
+            let matches:bool=tx.query_row("SELECT EXISTS(SELECT 1 FROM change_proposals p WHERE p.id=?1 AND p.base_version=(SELECT id FROM document_versions WHERE document_id=p.entity_id ORDER BY number DESC LIMIT 1))",[proposal],|r|r.get(0)).map_err(error)?;
+            if !matches {
+                return Err("The proposal targets an older document version. Generate a fresh proposal for the latest version.".into());
+            }
+            let changed = tx
+                .execute(
+                    "UPDATE change_proposals SET status='accepted' WHERE id=?1 AND status='review'",
+                    [proposal],
+                )
+                .map_err(error)?;
+            if changed != 1 {
+                return Err("This proposal has already been reviewed.".into());
+            }
+        }
         if input.id.is_some() {
+            let expected = input
+                .expected_revision
+                .ok_or("Reload the document before editing: expected revision is required.")?;
             let kind: Option<String> = tx
                 .query_row(
                     "SELECT kind FROM documents WHERE id=?1",
@@ -247,13 +318,23 @@ impl Store {
                 return Err("Document does not exist or its type has changed.".into());
             }
             tx.execute(
-                "UPDATE documents SET title=?1 WHERE id=?2",
-                params![title, document_id],
+                "UPDATE documents SET title=?1,revision=revision+1 WHERE id=?2 AND revision=?3",
+                params![title, document_id, expected],
             )
-            .map_err(error)?;
+            .map_err(error)
+            .and_then(|count| {
+                if count == 1 {
+                    Ok(())
+                } else {
+                    Err(
+                        "Revision conflict. Reload the document; your draft remains available."
+                            .into(),
+                    )
+                }
+            })?;
         } else {
             tx.execute(
-                "INSERT INTO documents VALUES (?1,?2,?3)",
+                "INSERT INTO documents(id,title,kind) VALUES (?1,?2,?3)",
                 params![document_id, title, input.kind],
             )
             .map_err(error)?;
@@ -338,7 +419,7 @@ impl Store {
     }
 
     pub fn prepare_application(&mut self, vacancy_id: &str) -> Result<String> {
-        let tx = self.db.transaction().map_err(error)?;
+        let tx = self.db.savepoint().map_err(error)?;
         let existing: Option<String> = tx
             .query_row(
                 "SELECT id FROM applications WHERE vacancy_id=?1",
@@ -419,7 +500,7 @@ impl Store {
             );
         }
         let time = now();
-        let tx = self.db.transaction().map_err(error)?;
+        let tx = self.db.savepoint().map_err(error)?;
         for version_id in &input.document_version_ids {
             let exists: bool = tx
                 .query_row(

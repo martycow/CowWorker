@@ -1,10 +1,24 @@
 export type VacancyStatus = 'saved' | 'reviewed' | 'shortlisted' | 'archived';
 export type Stage = 'preparing' | 'applied' | 'interview' | 'offer' | 'rejected' | 'withdrawn';
-export type DocumentKind = 'resume' | 'cover-letter' | 'note' | 'job-offer' | 'agreement' | 'tax-related' | 'other';
-export type WorkMode = 'Remote' | 'Hybrid' | 'On-Site' | 'Unspecified';
+export type DocumentKind =
+  | 'resume'
+  | 'cover-letter'
+  | 'note'
+  | 'job-offer'
+  | 'agreement'
+  | 'tax-related'
+  | 'other'
+  | 'job-description'
+  | 'portfolio'
+  | 'reference'
+  | 'unknown';
+export type WorkMode = 'Remote' | 'Hybrid' | 'On-site' | 'Unspecified';
 
 export interface Vacancy {
   id: string;
+  companyId?: string | null;
+  revision: number;
+  structured: Record<string, unknown>;
   title: string;
   company: string;
   location: string;
@@ -16,21 +30,26 @@ export interface Vacancy {
   createdAt: string;
   updatedAt: string;
 }
-export type VacancyInput = Omit<Vacancy, 'id' | 'createdAt' | 'updatedAt'> & { id?: string };
+export type VacancyInput = Omit<
+  Vacancy,
+  'id' | 'createdAt' | 'updatedAt' | 'revision' | 'structured'
+> & { id?: string; expectedRevision?: number };
 export interface DocumentVersion {
   id: string;
   number: number;
-  content: string;
+  content: string | null;
   createdAt: string;
 }
 export interface CareerDocument {
   id: string;
+  revision: number;
   title: string;
   kind: DocumentKind;
   versions: DocumentVersion[];
 }
 export interface DocumentInput {
   id?: string;
+  expectedRevision?: number;
   title: string;
   kind: DocumentKind;
   content: string;
@@ -80,7 +99,11 @@ export const documentLabels: Record<DocumentKind, string> = {
   'job-offer': 'Job offer',
   agreement: 'Agreement',
   'tax-related': 'Tax related',
-  other: "Other"
+  other: 'Other',
+  'job-description': 'Job description',
+  portfolio: 'Portfolio',
+  reference: 'Reference',
+  unknown: 'Unknown',
 };
 export function localDate(date = new Date()): string {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;

@@ -3,6 +3,7 @@ use cowworker_core::*;
 fn vacancy() -> VacancyInput {
     VacancyInput {
         id: None,
+        expected_revision: None,
         title: "Frontend Engineer".into(),
         company: "Example".into(),
         location: "US".into(),
@@ -15,6 +16,7 @@ fn vacancy() -> VacancyInput {
 }
 fn document(id: Option<String>, content: &str) -> DocumentInput {
     DocumentInput {
+        expected_revision: id.as_ref().map(|_| 1),
         id,
         title: "Resume".into(),
         kind: "resume".into(),
@@ -73,7 +75,10 @@ fn vacancy_to_application_survives_restart_with_exact_submitted_copy() {
         .iter()
         .find(|v| v.id == version_id)
         .unwrap();
-    assert_eq!(sent.content, "Resume v1\r\nТочный текст");
+    assert_eq!(
+        reopened.document_content(&sent.id).unwrap(),
+        "Resume v1\r\nТочный текст"
+    );
     assert_eq!(
         std::fs::read_to_string(
             dir.path()
@@ -81,7 +86,7 @@ fn vacancy_to_application_survives_restart_with_exact_submitted_copy() {
                 .join(format!("{version_id}.txt"))
         )
         .unwrap(),
-        sent.content
+        reopened.document_content(&sent.id).unwrap()
     );
 }
 
@@ -186,6 +191,7 @@ fn archive_restore_profile_and_date_validation() {
     assert!(store.prepare_application(&v).is_err());
     let mut input = vacancy();
     input.id = Some(v.clone());
+    input.expected_revision = Some(1);
     store.save_vacancy(input).unwrap();
     store.prepare_application(&v).unwrap();
     for date in ["2026-02-30", "2026-2-1", "next week"] {
@@ -226,7 +232,11 @@ fn future_schema_and_missing_files_fail_explicitly() {
         .id
         .clone();
     std::fs::remove_file(dir.path().join("documents").join(format!("{id}.txt"))).unwrap();
-    assert!(store.workspace().unwrap_err().contains("Restore its file"));
+    assert!(store.workspace().is_ok());
+    assert!(store
+        .document_content(&id)
+        .unwrap_err()
+        .contains("Restore its file"));
     drop(store);
     let db = rusqlite::Connection::open(dir.path().join("cowworker.db")).unwrap();
     db.execute_batch("PRAGMA user_version=99;").unwrap();

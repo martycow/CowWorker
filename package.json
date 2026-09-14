@@ -1,6 +1,6 @@
 {
   "name": "cowworker",
-  "version": "0.1.0",
+  "version": "0.2.6",
   "private": true,
   "type": "module",
   "engines": {
@@ -9,9 +9,9 @@
   "packageManager": "npm@11.18.0",
   "scripts": {
     "dev": "vite --host 127.0.0.1",
-    "build": "tsc --noEmit && vite build",
+    "build": "node scripts/build.mjs frontend",
     "preview": "vite preview --host 127.0.0.1",
-    "tauri": "tauri",
+    "tauri": "node scripts/build.mjs tauri",
     "test": "vitest run frontend",
     "test:core": "cargo test -p cowworker-core",
     "test:e2e": "playwright test",

@@ -8,7 +8,8 @@ status: implemented-baseline-and-planned-contracts
 # Architecture
 
 This file owns technical boundaries and target contracts. [Product](../business/PRODUCT.md) owns requirements.
-The [development plan](../management/V0.2.0_DEVELOPMENT_PLAN.md) owns implementation steps. Target contracts here are not implemented.
+The [development plan](../management/V0.2.0_DEVELOPMENT_PLAN.md) owns implementation steps.
+The [implementation record](../management/V0.2.0_IMPLEMENTATION.md) separates current behavior from remaining target contracts.
 
 ## Implemented boundaries
 
@@ -18,15 +19,18 @@ React and TypeScript provide the UI. `frontend/App.tsx` holds page state, worksp
 `backend/src/store.rs` owns validation, SQLite operations, and immutable UTF-8 document files.
 Application updates and history events share transactions. SQLite uses WAL, foreign keys, and a busy timeout.
 
-The UI reloads all workspace data after each mutation. That load reads every document version file.
+The UI reloads workspace metadata after mutations. Document content loads separately for an explicitly selected version.
 The global `act`/`busyRef` guard permits one UI mutation at a time. It is not a scheduler.
-File import reads text in a form. Source URLs are stored and opened externally, not fetched.
-There are no AI providers, token counters, workers, Company records, or server modules.
+Universal Add retains original sources and persistent review drafts. Explicitly authorized public URL imports use a bounded Rust HTTP adapter.
+The Rust queue owns execution independently of navigation. One worker processes tasks; a separate heartbeat renews its lease.
+The AI runtime persists logical operations, provider attempts, authorization scopes, and nullable usage measurements.
+Company records own manual facts, employment relationships, source proposals, and managed logos. Application stages remain on applications.
+Task Center creates verified backups and restores separate workspace copies. Storage connections close before the active path changes.
 Server synchronization remains a planned direction from decision 002.
 
 ## Target module boundaries
 
-New paths describe proposed modules:
+The following modules exist, except `frontend/shell/`. App.tsx still owns the shell. The implementation record lists incomplete contracts within each module:
 
 | Boundary | Responsibility |
 | --- | --- |
@@ -39,7 +43,7 @@ New paths describe proposed modules:
 | `src-tauri/src/` | Runner startup, short commands, events, OS file/credential adapters |
 | `frontend/shell/`, `tasks/`, `ai/`, `import/`, `companies/` | Shared shell services and feature presentation |
 
-The Rust core stays independent of Tauri through traits for events, transport, credentials, and clock.
+The Rust core stays independent of Tauri. ModelProvider abstracts model transport; the current implementation directly uses keyring and the system clock.
 Existing Store methods remain reusable. Modules move only when a phase requires a boundary.
 The browser adapter remains a deterministic demo/test adapter. It does not own native tasks or provider credentials.
 

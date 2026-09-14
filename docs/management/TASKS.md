@@ -59,22 +59,22 @@ These tasks require a person, with optional AI assistance:
 
 ## Current
 
-No tasks are in development.
+The [implementation record](V0.2.0_IMPLEMENTATION.md) lists working behavior and remaining acceptance conditions for each task.
+IMP-0011 and FT-0005 are complete; their outcomes remain in the permanent registry.
+
+- [!] [FT-0012] [High] [09-13-2026] P1: Sources, ownership, revisions, and proposals implemented; finish source anchors and provenance inspection.
+- [!] [FT-0013] [High] [09-13-2026] P2: Persistent queue and Task Center implemented; finish resource policies, graph admission, transient retries, and reconciliation.
+- [!] [FT-0014] [High] [09-13-2026] P3: Company domain and manual Hub implemented; finish domain/alias matching and identity conflict review.
+- [!] [FT-0007] [Med] [09-13-2026] P4: Runtime, model discovery, scope approval, and ledger implemented; finish capability/price/reconciliation contracts.
+- [!] [FT-0015] [High] [09-13-2026] P5: Persistent Universal Import implemented; finish OCR, clipboard images, matching, stage reprocessing, and native acquisition matrix.
+- [!] [FT-0006] [Med] [09-13-2026] PDF/DOCX extraction and export implemented; finish malformed/encrypted corpus and full UI acceptance.
+- [!] [FT-0016] [Med] [09-13-2026] P6: Website refresh, proposals, and local logos implemented; finish broader research and remote logo adapters.
+- [!] [FT-0008] [Med] [09-13-2026] P7: Contextual panel and guarded proposals implemented; finish field/selection context, annotations, and related-record tailoring.
+- [!] [UI-0017] [Med] [09-13-2026] P8: Usage page and 10,000-attempt query fixture implemented; finish reconciliation, entity navigation, and accessibility coverage.
+- [!] [IMP-0018] [High] [09-13-2026] P9: Core/browser/native recovery checks implemented; finish complete acceptance matrix and release/platform evidence.
 
 ## Upcoming
 
-- [ ] [IMP-0011] [High] [09-13-2026] P0: Reconcile baseline contracts and add ordered migrations for both schema-1 document variants.
-- [ ] [FT-0012] [High] [09-13-2026] P1: Add immutable sources, field ownership, revisions, and reviewed proposals.
-- [ ] [FT-0013] [High] [09-13-2026] P2: Add the persistent Rust task queue and global Task Center.
-- [ ] [FT-0014] [High] [09-13-2026] P3: Add Company identity, relationships, legacy migration, and manual Company Hub.
-- [ ] [FT-0015] [High] [09-13-2026] P5: Add Universal Import acquisition, processing adapters, and persistent review with FT-0006.
-- [ ] [FT-0016] [Med] [09-13-2026] P6: Add source-backed company research, refresh, and managed logos.
-- [ ] [UI-0017] [Med] [09-13-2026] P8: Add AI Usage queries, summaries, charts, and attempt history.
-- [ ] [IMP-0018] [High] [09-13-2026] P9: Validate integrated workflows, migrations, recovery, and release evidence.
-- [ ] [FT-0005] [Med] [09-13-2026] Add complete workspace backup and restoration with integrity checks.
-- [ ] [FT-0006] [Med] [09-13-2026] Add PDF and DOCX import and export with parser limits and preview checks.
-- [ ] [FT-0007] [Med] [09-13-2026] Add AI provider discovery and an evidence-based analysis contract.
-- [ ] [FT-0008] [Med] [09-13-2026] Add a user-reviewed proposal flow for AI document changes.
 - [ ] [PL-0009] [Med] [09-13-2026] Define synchronization identity, revisions, conflicts, and server boundaries.
 - [ ] [FT-0010] [Med] [09-13-2026] After local scheduling rules are established, add calendar and notification adapters.
 
@@ -86,6 +86,6 @@ The [development plan](V0.2.0_DEVELOPMENT_PLAN.md) is the detailed engineering h
 P0 uses IMP-0011 and the backup prerequisite from FT-0005.
 P4 expands FT-0007 into the central AI runtime and ledger. P7 uses FT-0008 for contextual proposals.
 FT-0006 retains import and export scope. PL-0009 and FT-0010 remain separate future work.
-Phase labels are delivery groups, not replacement task IDs. No feature implementation started during this planning task.
+Phase labels are delivery groups, not replacement task IDs. Implementation is in progress; the original plan remains the acceptance baseline.
 
 See [backlog](BACKLOG.md) and [architecture](../tech/ARCHITECTURE.md).

@@ -4,6 +4,9 @@ use serde::{Deserialize, Serialize};
 #[serde(rename_all = "camelCase")]
 pub struct Vacancy {
     pub id: String,
+    pub company_id: Option<String>,
+    pub revision: i64,
+    pub structured: serde_json::Value,
     pub title: String,
     pub company: String,
     pub location: String,
@@ -20,6 +23,7 @@ pub struct Vacancy {
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct VacancyInput {
     pub id: Option<String>,
+    pub expected_revision: Option<i64>,
     pub title: String,
     pub company: String,
     pub location: String,
@@ -34,6 +38,7 @@ pub struct VacancyInput {
 #[serde(rename_all = "camelCase")]
 pub struct Document {
     pub id: String,
+    pub revision: i64,
     pub title: String,
     pub kind: String,
     pub versions: Vec<DocumentVersion>,
@@ -44,7 +49,7 @@ pub struct Document {
 pub struct DocumentVersion {
     pub id: String,
     pub number: i64,
-    pub content: String,
+    pub content: Option<String>,
     pub created_at: String,
 }
 
@@ -52,6 +57,7 @@ pub struct DocumentVersion {
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct DocumentInput {
     pub id: Option<String>,
+    pub expected_revision: Option<i64>,
     pub title: String,
     pub kind: String,
     pub content: String,

@@ -19,7 +19,8 @@ Rust, React, TypeScript, Tauri, SQLite, and the selected visual direction remain
 
 The code supports manual vacancy capture, immutable text document versions, application history, next actions, and profile facts.
 There is one application per vacancy. Submitted applications retain exact document versions.
-AI, Company records, durable tasks, and binary document parsers are not implemented.
+The desktop code also supports Company records, durable tasks, reviewed imports, PDF/DOCX text conversion, and a central AI runtime.
+The [implementation record](../management/V0.2.0_IMPLEMENTATION.md) identifies the remaining requirements. These additions do not complete every requirement below.
 [Verification](../tech/VERIFICATION.md) separates historical Windows results from current evidence.
 
 ## Contextual AI

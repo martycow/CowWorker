@@ -1312,3 +1312,127 @@ main {
     animation: none !important;
   }
 }
+:root {
+  --task-gap: 12px;
+}
+.task-list {
+  display: grid;
+  gap: var(--task-gap);
+  margin-top: 16px;
+}
+.task-item {
+  display: grid;
+  gap: 8px;
+  padding: 14px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+.task-item progress {
+  width: 100%;
+}
+.asset-path {
+  overflow-wrap: anywhere;
+}
+.company-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(280px, 1fr);
+  gap: 16px;
+  margin-top: 16px;
+}
+.company-list {
+  min-width: 0;
+}
+.company-layout dl > div {
+  margin: 12px 0;
+}
+.company-layout dt {
+  font-weight: 600;
+}
+.company-layout dd {
+  margin: 4px 0;
+  overflow-wrap: anywhere;
+}
+@media (max-width: 900px) {
+  .company-layout {
+    grid-template-columns: 1fr;
+  }
+}
+.ai-panel {
+  position: fixed;
+  right: 16px;
+  top: 70px;
+  bottom: 16px;
+  width: min(440px, calc(100vw - 32px));
+  overflow: auto;
+  padding: 20px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  z-index: 20;
+  box-shadow: 0 12px 60px #0008;
+}
+.ai-panel.ai-bottom {
+  left: 16px;
+  top: auto;
+  width: auto;
+  max-height: 45vh;
+}
+.proposal-value {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  max-height: 300px;
+  overflow: auto;
+}
+.preserve-lines {
+  white-space: pre-wrap;
+}
+.usage-summary {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 12px;
+  margin: 20px 0;
+}
+.ai-usage table {
+  width: 100%;
+  border-collapse: collapse;
+}
+.ai-usage th,
+.ai-usage td {
+  padding: 10px 12px;
+  text-align: left;
+  border-bottom: 1px solid var(--border);
+  vertical-align: top;
+}
+.ai-usage th:first-child,
+.ai-usage td:first-child {
+  padding-left: 0;
+}
+.ai-usage details {
+  margin: 12px 0;
+  overflow-x: auto;
+}
+.table-scroll {
+  overflow: auto;
+}
+.company-logo {
+  width: 44px;
+  height: 44px;
+  object-fit: contain;
+  border-radius: 8px;
+  flex: none;
+}
+.company-layout .detail-panel {
+  display: block;
+}
+.topbar {
+  flex-wrap: wrap;
+  gap: 8px;
+}
+@media (min-width: 1200px) {
+  .shell:has(.ai-panel:not(.ai-bottom)) main {
+    padding-right: 480px;
+  }
+  .shell:has(.ai-panel:not(.ai-bottom)) .split {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
