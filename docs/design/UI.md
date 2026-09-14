@@ -9,10 +9,9 @@ status: accepted-direction
 
 ## Accepted direction
 
-The user selected the [first prototype](prototypes/2026-09-13/01-vacancies.png) with a sidebar that can be hidden and shown.
-The image remains the visual reference. The first application implements both visible and hidden sidebar states.
+Sidebar that can be hidden and shown.
 
-Retain its graphite surfaces, lime primary actions, muted blue accents, readable vacancy rows, and contextual detail pane.
+Graphite surfaces, lime primary actions, muted blue accents, readable vacancy rows, and contextual detail pane.
 The interface uses English and a restrained cow identity.
 
 ## Sidebar
@@ -31,12 +30,6 @@ The selected prototype establishes this palette. A light theme uses the same hie
 Vacancies use a semantic table and a contextual detail pane. Active controls support keyboard focus.
 Dialogs keep focus inside, return focus to their trigger, and protect unsaved changes on dismissal.
 Empty states provide a next action. Error states retain form input. Match analysis remains explicitly unavailable.
-
-## Supporting references
-
-- [Original style reference](../screenshots/Style_Reference.jpg)
-- [Application detail exploration](prototypes/2026-09-13/02-application.png)
-- [Resume editor exploration](prototypes/2026-09-13/03-resume-editor.png)
 
 The supporting explorations are not independently approved designs.
 Mock companies, requirements, and dates are demonstration data.

@@ -99,7 +99,6 @@ CowWorker is intended to be used as an assistant during job hunting including al
 - A little bit fun. It's COWworker, you know!
 - A cow worker on logo;
 - Light/Dark theme switch;
-- [UI Style Reference](screenshots/Style_Reference.jpg)
 - Customizable dashboard
 - Appearance Settings
 - General Settings
