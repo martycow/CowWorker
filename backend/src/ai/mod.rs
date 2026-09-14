@@ -293,7 +293,24 @@ impl Store {
                 if revision != request.base_revision {
                     return Err("Revision conflict. Refresh the AI context.".into());
                 }
-                json!({"content":self.document_content(version)?,"version":version})
+                let related:Option<(String,Option<String>)>=self.db.query_row("SELECT vacancy_id,resume_version_id FROM document_job_context WHERE document_id=?1",[&request.entity_id],|r|Ok((r.get(0)?,r.get(1)?))).optional().map_err(err)?;
+                let mut context =
+                    json!({"content":self.document_content(version)?,"version":version});
+                if let Some((job, resume)) = related {
+                    let vacancy = self
+                        .vacancies()?
+                        .into_iter()
+                        .find(|v| v.id == job)
+                        .ok_or("Related vacancy no longer exists.")?;
+                    context["vacancy"] = serde_json::to_value(vacancy).map_err(err)?;
+                    if let Some(resume) = resume {
+                        context["originalResume"] =
+                            json!({"version":resume,"content":self.document_content(&resume)?});
+                    }
+                    context["profile"] =
+                        serde_json::to_value(self.workspace()?.profile).map_err(err)?;
+                }
+                context
             }
             "company" => {
                 let (revision,name,fields):(i64,String,String)=self.db.query_row("SELECT revision,name,fields FROM companies WHERE id=?1 AND merged_into IS NULL",[&request.entity_id],|r|Ok((r.get(0)?,r.get(1)?,r.get(2)?))).map_err(err)?;

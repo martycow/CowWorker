@@ -91,7 +91,14 @@ impl Store {
                     } else {
                         crate::import::formats::extract(&bytes, &media)?
                     };
-                    self.source_snapshot(&source, &text, "bounded-extractor", "1")?;
+                    let tool = if media.starts_with("image/") {
+                        "windows-ocr"
+                    } else if media == "application/pdf" {
+                        "pdf-extract/windows-ocr"
+                    } else {
+                        "bounded-extractor"
+                    };
+                    self.source_snapshot(&source, &text, tool, "1")?;
                     let mut draft = crate::import::classify(
                         &text,
                         task.payload["name"].as_str().unwrap_or("Imported document"),

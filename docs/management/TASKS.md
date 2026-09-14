@@ -1,7 +1,7 @@
 ---
 owner: marty
 created: '2026-09-13'
-last_verified: '2026-09-13'
+last_verified: '2026-09-14'
 status: active
 ---
 
@@ -61,15 +61,16 @@ These tasks require a person, with optional AI assistance:
 
 The [implementation record](V0.2.0_IMPLEMENTATION.md) lists working behavior and remaining acceptance conditions for each task.
 IMP-0011 and FT-0005 are complete; their outcomes remain in the permanent registry.
+UI-0019 is complete: Settings displays the application version in its popover.
 
 - [!] [FT-0012] [High] [09-13-2026] P1: Sources, ownership, revisions, and proposals implemented; finish source anchors and provenance inspection.
 - [!] [FT-0013] [High] [09-13-2026] P2: Persistent queue and Task Center implemented; finish resource policies, graph admission, transient retries, and reconciliation.
 - [!] [FT-0014] [High] [09-13-2026] P3: Company domain and manual Hub implemented; finish domain/alias matching and identity conflict review.
 - [!] [FT-0007] [Med] [09-13-2026] P4: Runtime, model discovery, scope approval, and ledger implemented; finish capability/price/reconciliation contracts.
-- [!] [FT-0015] [High] [09-13-2026] P5: Persistent Universal Import implemented; finish OCR, clipboard images, matching, stage reprocessing, and native acquisition matrix.
+- [!] [FT-0015] [High] [09-13-2026] P5: Persistent import, Windows OCR, clipboard image handler, and ordered screenshot combination implemented; finish matching, stage reprocessing, and native acquisition matrix.
 - [!] [FT-0006] [Med] [09-13-2026] PDF/DOCX extraction and export implemented; finish malformed/encrypted corpus and full UI acceptance.
 - [!] [FT-0016] [Med] [09-13-2026] P6: Website refresh, proposals, and local logos implemented; finish broader research and remote logo adapters.
-- [!] [FT-0008] [Med] [09-13-2026] P7: Contextual panel and guarded proposals implemented; finish field/selection context, annotations, and related-record tailoring.
+- [!] [FT-0008] [Med] [09-13-2026] P7: Contextual panel, guarded proposals, and vacancy-linked resume/cover letter preparation implemented; finish field/selection context and annotations.
 - [!] [UI-0017] [Med] [09-13-2026] P8: Usage page and 10,000-attempt query fixture implemented; finish reconciliation, entity navigation, and accessibility coverage.
 - [!] [IMP-0018] [High] [09-13-2026] P9: Core/browser/native recovery checks implemented; finish complete acceptance matrix and release/platform evidence.
 

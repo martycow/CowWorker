@@ -40,7 +40,13 @@ const empty = (title: string): Draft => ({
   confidence: 0,
   method: 'manual review',
 });
-export function UniversalAdd({ onChange }: { onChange: () => Promise<void> }) {
+export function UniversalAdd({
+  onChange,
+  onOpen,
+}: {
+  onChange: () => Promise<void>;
+  onOpen: (type: string, id: string) => void;
+}) {
   const [open, setOpen] = useState(false);
   const [items, setItems] = useState<Item[]>([]);
   const [text, setText] = useState('');
@@ -51,6 +57,12 @@ export function UniversalAdd({ onChange }: { onChange: () => Promise<void> }) {
   const [offset, setOffset] = useState(0);
   const [editing, setEditing] = useState<Item | null>(null);
   const [savedRevision, setSavedRevision] = useState(0);
+  const [selected, setSelected] = useState<string[]>([]);
+  useEffect(() => {
+    const show = () => setOpen(true);
+    window.addEventListener('open-universal-add', show);
+    return () => window.removeEventListener('open-universal-add', show);
+  }, []);
   const refresh = async () => {
     if (native) setItems(await invoke('list_imports', { offset }));
   };
@@ -91,6 +103,36 @@ export function UniversalAdd({ onChange }: { onChange: () => Promise<void> }) {
       setBusy(false);
     }
   };
+  const upload = (files: File[]) =>
+    act(async () => {
+      const failures: string[] = [];
+      for (const file of files.slice(0, 20)) {
+        try {
+          if (file.size > 25_000_000) throw new Error('Choose a file up to 25 MB.');
+          await invoke('import_upload', {
+            name: file.name,
+            bytes: Array.from(new Uint8Array(await file.arrayBuffer())),
+          });
+        } catch (e) {
+          failures.push(`${file.name}: ${String(e)}`);
+        }
+      }
+      if (files.length > 20) failures.push('Import up to 20 files at a time.');
+      if (failures.length) setError(failures.join('\n'));
+    });
+  useEffect(() => {
+    const paste = (event: ClipboardEvent) => {
+      const files = Array.from(event.clipboardData?.files ?? []).filter((f) =>
+        f.type.startsWith('image/'),
+      );
+      if (!native || !files.length || busy) return;
+      event.preventDefault();
+      setOpen(true);
+      void upload(files);
+    };
+    window.addEventListener('paste', paste);
+    return () => window.removeEventListener('paste', paste);
+  }, [busy]);
   return (
     <>
       <button onClick={() => setOpen(true)}>Universal Add</button>
@@ -102,8 +144,8 @@ export function UniversalAdd({ onChange }: { onChange: () => Promise<void> }) {
           savedRevision={savedRevision}
         >
           <p>
-            Paste text, select files, or drop files onto the desktop window. Each input keeps its
-            original and an independent review.
+            Import a resume or vacancy from PDF, DOCX, text, or screenshots. Paste an image with
+            Ctrl+V, or drop files onto the window. Original files stay preserved.
           </p>
           {!native && (
             <p>
@@ -115,10 +157,9 @@ export function UniversalAdd({ onChange }: { onChange: () => Promise<void> }) {
             <ImportReview
               item={editing}
               busy={busy}
-              onBack={() => setEditing(null)}
               onSave={(draft, save) =>
                 act(async () => {
-                  await invoke('review_import', {
+                  const target = await invoke<string | null>('review_import', {
                     id: editing.id,
                     expectedRevision: editing.revision,
                     draft,
@@ -126,24 +167,34 @@ export function UniversalAdd({ onChange }: { onChange: () => Promise<void> }) {
                   });
                   setEditing(null);
                   setSavedRevision((revision) => revision + 1);
+                  if (save && target) {
+                    setOpen(false);
+                    onOpen(draft.entityType, target);
+                  }
                 })
               }
             />
           ) : (
             <>
               <div className="version-toolbar">
-                <button
-                  disabled={!native || busy}
-                  onClick={() =>
-                    void act(async () => {
-                      const result = await invoke<{ error?: string }[]>('import_files');
-                      const failures = result.filter((r) => r.error);
-                      if (failures.length) setError(failures.map((r) => r.error).join('\n'));
-                    })
-                  }
-                >
+                <label className="button">
                   Choose files
-                </button>
+                  <input
+                    className="file-input"
+                    aria-label="Import career files"
+                    type="file"
+                    multiple
+                    accept=".pdf,.docx,.txt,.md,.png,.jpg,.jpeg,.webp"
+                    disabled={!native || busy}
+                    onChange={(event) => {
+                      const input = event.currentTarget;
+                      const files = Array.from(input.files ?? []);
+                      void upload(files).finally(() => {
+                        input.value = '';
+                      });
+                    }}
+                  />
+                </label>
                 <label>
                   <input
                     type="checkbox"
@@ -161,7 +212,13 @@ export function UniversalAdd({ onChange }: { onChange: () => Promise<void> }) {
                   rows={url ? 2 : 5}
                   maxLength={1000000}
                   value={text}
-                  onChange={(e) => setText(e.target.value)}
+                  onChange={(e) => {
+                    setText(e.target.value);
+                    if (/^https?:\/\/\S+$/.test(e.target.value.trim())) {
+                      setUrl(true);
+                      setAuthorized(false);
+                    }
+                  }}
                 />
               </Field>
               {url && (
@@ -185,12 +242,34 @@ export function UniversalAdd({ onChange }: { onChange: () => Promise<void> }) {
                     });
                     setText('');
                     setAuthorized(false);
+                    setSavedRevision((revision) => revision + 1);
                   })
                 }
               >
                 Add to import queue
               </button>
               <h3>Import review</h3>
+              <p>
+                For several screenshots of one vacancy, select them in reading order and combine
+                them before saving.
+              </p>
+              {selected.length > 0 && (
+                <button
+                  disabled={busy || selected.length < 2}
+                  onClick={() =>
+                    void act(async () => {
+                      const id = await invoke<string>('combine_imports', { items: selected });
+                      setSelected([]);
+                      setOffset(0);
+                      const rows = await invoke<Item[]>('list_imports', { offset: 0 });
+                      setItems(rows);
+                      setEditing(rows.find((item) => item.id === id) ?? null);
+                    })
+                  }
+                >
+                  Combine {selected.length} sources into one vacancy
+                </button>
+              )}
               {!items.length && <p>No imported sources yet.</p>}
               {items.map((item) => (
                 <article className="task-item" key={item.id}>
@@ -204,7 +283,28 @@ export function UniversalAdd({ onChange }: { onChange: () => Promise<void> }) {
                   </span>
                   {item.error && <p>{item.error}</p>}
                   {item.status !== 'saved' && !['queued', 'running'].includes(item.taskStatus) && (
-                    <button onClick={() => setEditing(item)}>Review {item.name}</button>
+                    <div className="version-toolbar">
+                      {item.draft && (
+                        <label>
+                          <input
+                            type="checkbox"
+                            aria-label={`Select ${item.name} for combining`}
+                            checked={selected.includes(item.id)}
+                            onChange={(e) =>
+                              setSelected(
+                                e.target.checked
+                                  ? [...selected, item.id]
+                                  : selected.filter((id) => id !== item.id),
+                              )
+                            }
+                          />{' '}
+                          {selected.includes(item.id)
+                            ? `Reading order ${selected.indexOf(item.id) + 1}`
+                            : 'Combine'}
+                        </label>
+                      )}
+                      <button onClick={() => setEditing(item)}>Review {item.name}</button>
+                    </div>
                   )}
                 </article>
               ))}
@@ -231,12 +331,10 @@ export function UniversalAdd({ onChange }: { onChange: () => Promise<void> }) {
 function ImportReview({
   item,
   busy,
-  onBack,
   onSave,
 }: {
   item: Item;
   busy: boolean;
-  onBack: () => void;
   onSave: (draft: Draft, save: boolean) => Promise<void>;
 }) {
   const [draft, setDraft] = useState(item.draft ?? empty(item.name));
@@ -248,8 +346,8 @@ function ImportReview({
         void onSave(draft, true);
       }}
     >
-      <button type="button" onClick={onBack}>
-        Back to imports
+      <button type="button" disabled={busy} onClick={() => void onSave(draft, false)}>
+        Keep draft and return to imports
       </button>
       <p>
         {draft.method} · confidence {Math.round(draft.confidence * 100)}%. Check the content and

@@ -57,16 +57,28 @@ impl Store {
         if version > crate::migrations::CURRENT_VERSION {
             return Err("This workspace was created by a newer CowWorker version. Update CowWorker before opening it.".into());
         }
-        if version > 0 && version < crate::migrations::CURRENT_VERSION {
-            crate::backup::create(
+        let before_upgrade = if version > 0 && version < crate::migrations::CURRENT_VERSION {
+            Some(crate::backup::create(
                 &db,
                 &path,
                 &path
                     .join("backups")
                     .join(format!("before-schema-{version}-{}", id())),
-            )?;
-        }
+            )?)
+        } else {
+            None
+        };
         crate::migrations::run(&db)?;
+        if let Some(snapshot) = before_upgrade {
+            for table in crate::migrations::PRESERVED_TABLES {
+                let count: i64 = db
+                    .query_row(&format!("SELECT COUNT(*) FROM {table}"), [], |r| r.get(0))
+                    .map_err(error)?;
+                if snapshot.counts.get(table) != Some(&count) {
+                    return Err(format!("Upgrade record check failed for {table}. Open the verified before-schema backup under {}. The application will not use this workspace.",path.join("backups").display()));
+                }
+            }
+        }
         Ok(Self {
             db,
             documents_path,

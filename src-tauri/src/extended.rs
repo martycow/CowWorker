@@ -3,6 +3,46 @@ use cowworker_core::*;
 use serde_json::Value;
 use tauri::Manager;
 #[tauri::command]
+pub fn prepare_job_document(
+    state: State<AppState>,
+    vacancy_id: String,
+    expected_revision: i64,
+    resume_version_id: String,
+    kind: String,
+) -> Result<String, String> {
+    with_store(state, |s| {
+        s.prepare_job_document(&vacancy_id, expected_revision, &resume_version_id, &kind)
+    })
+}
+#[tauri::command]
+pub fn import_upload(
+    state: State<AppState>,
+    name: String,
+    bytes: Vec<u8>,
+) -> Result<String, String> {
+    let media = match name
+        .rsplit('.')
+        .next()
+        .unwrap_or("")
+        .to_lowercase()
+        .as_str()
+    {
+        "pdf" => "application/pdf",
+        "docx" => "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        "txt" => "text/plain",
+        "md" => "text/markdown",
+        "png" => "image/png",
+        "jpg" | "jpeg" => "image/jpeg",
+        "webp" => "image/webp",
+        _ => return Err("Choose PDF, DOCX, TXT, Markdown, PNG, JPEG, or WebP.".into()),
+    };
+    with_store(state, |s| s.import_bytes(&name, media, &bytes, None))
+}
+#[tauri::command]
+pub fn combine_imports(state: State<AppState>, items: Vec<String>) -> Result<String, String> {
+    with_store(state, |s| s.combine_imports(items))
+}
+#[tauri::command]
 pub async fn discover_models(app: tauri::AppHandle) -> Result<Vec<String>, String> {
     let config = with_store(app.state::<AppState>(), |s| s.provider_config())?
         .ok_or("Save AI settings before loading available model IDs.")?;

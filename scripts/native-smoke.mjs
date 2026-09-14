@@ -6,6 +6,8 @@ import { resolve, join } from 'node:path';
 import { createServer } from 'node:net';
 import { once } from 'node:events';
 import { createServer as createHttpServer } from 'node:http';
+import { morningFlow, morningLetter } from './morning-native.mjs';
+import { DatabaseSync } from 'node:sqlite';
 
 if (process.platform !== 'win32')
   throw new Error('The native smoke test currently requires Windows WebView2.');
@@ -22,7 +24,14 @@ const fixtureServer = createHttpServer(async (req, res) => {
   }
   let body = '';
   for await (const chunk of req) body += chunk;
-  modelRequests.push({ url: req.url, body: JSON.parse(body) });
+  const payload = JSON.parse(body);
+  modelRequests.push({ url: req.url, body: payload });
+  const evidence = JSON.parse(payload.messages.at(-1).content);
+  const isLetter = evidence.purpose === 'cover-letter';
+  if (isLetter) {
+    expect(evidence.evidence.vacancy.company).toBe('Morning Example');
+    expect(evidence.evidence.originalResume.content).toContain('Example Studio');
+  }
   if (req.url === '/slow') return;
   res.setHeader('Content-Type', 'application/json');
   res.end(
@@ -32,9 +41,11 @@ const fixtureServer = createHttpServer(async (req, res) => {
         {
           message: {
             content: JSON.stringify({
-              summary: 'Fixture analysis using only the supplied vacancy.',
-              fields: { notes: 'Reviewed native AI note' },
-              content: null,
+              summary: isLetter
+                ? 'Fixture cover letter based on the supplied resume and vacancy.'
+                : 'Fixture analysis using only the supplied vacancy.',
+              fields: isLetter ? null : { notes: 'Reviewed native AI note' },
+              content: isLetter ? morningLetter : null,
             }),
           },
         },
@@ -51,7 +62,7 @@ const ipc = (page, command, args = {}) =>
     command,
     args,
   });
-async function start() {
+async function start(directory = dataDir) {
   const server = createServer();
   server.listen(0, '127.0.0.1');
   await once(server, 'listening');
@@ -61,8 +72,8 @@ async function start() {
     windowsHide: true,
     env: {
       ...process.env,
-      COWWORKER_DATA_DIR: dataDir,
-      WEBVIEW2_USER_DATA_FOLDER: join(dataDir, 'webview'),
+      COWWORKER_DATA_DIR: directory,
+      WEBVIEW2_USER_DATA_FOLDER: join(directory, 'webview'),
       WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS: `--remote-debugging-port=${port}`,
     },
     stdio: 'ignore',
@@ -260,7 +271,7 @@ try {
   const manifest = JSON.parse(
     await readFile(join(backupTask.result.directory, 'manifest.json'), 'utf8'),
   );
-  expect(manifest.schemaVersion).toBe(8);
+  expect(manifest.schemaVersion).toBe(9);
   expect(Object.keys(manifest.files).some((p) => p.startsWith('sources/'))).toBe(true);
   console.log('Checking native interruption after model dispatch.');
   const config = await ipc(reopened, 'provider_config');
@@ -312,10 +323,57 @@ try {
     'Reviewed native AI note',
   );
   expect(errors).toEqual([]);
+  const morning = await morningFlow(session.page, ipc, output);
+  await stop(session);
+  session = null;
+  session = await start();
+  const morningWorkspace = await ipc(session.page, 'load_workspace');
+  const morningOriginal = morningWorkspace.documents.find((d) => d.id === morning.originalId);
+  expect(morningOriginal.versions).toHaveLength(1);
+  expect(
+    await ipc(session.page, 'document_content', { versionId: morningOriginal.versions[0].id }),
+  ).toBe(morning.originalText);
+  expect(
+    morningWorkspace.documents.find(
+      (d) => d.title.includes('Cover letter') && d.title.includes('Morning Example'),
+    ).versions,
+  ).toHaveLength(3);
+  await stop(session);
+  session = null;
+  const activeName = JSON.parse(await readFile(join(dataDir, 'active-workspace.json'), 'utf8'));
+  const futureDb = new DatabaseSync(join(dataDir, 'restored', activeName, 'cowworker.db'));
+  futureDb.exec('PRAGMA user_version=999');
+  futureDb.close();
+  session = await start();
+  await expect(
+    session.page.getByText(/This workspace was created by a newer CowWorker version/),
+  ).toBeVisible();
+  await ipc(session.page, 'restore_workspace', { directory: backupTask.result.directory });
+  expect((await ipc(session.page, 'load_workspace')).vacancies[0].notes).toBe(
+    'Reviewed native AI note',
+  );
+  await stop(session);
+  session = null;
+  const legacyDir = await mkdtemp(join(tmpdir(), 'cowworker-legacy-'));
+  const legacyDb = new DatabaseSync(join(legacyDir, 'cowworker.db'));
+  legacyDb.exec(await readFile(resolve('backend/src/schema.sql'), 'utf8'));
+  legacyDb.exec(
+    "INSERT INTO vacancies VALUES ('legacy-v','Legacy role','Legacy company','','Remote','','Exact legacy source','Original note','saved','2025-01-01','2025-01-01'); INSERT INTO applications VALUES ('legacy-a','legacy-v','preparing','','','Original application',NULL,'2025-01-01','2025-01-01');",
+  );
+  legacyDb.close();
+  session = await start(legacyDir);
+  const legacyWorkspace = await ipc(session.page, 'load_workspace');
+  expect(legacyWorkspace.schemaVersion).toBe(9);
+  expect(legacyWorkspace.vacancies).toHaveLength(1);
+  expect(legacyWorkspace.vacancies[0].description).toBe('Exact legacy source');
+  expect(legacyWorkspace.applications).toHaveLength(1);
+  expect(legacyWorkspace.applications[0].notes).toBe('Original application');
+  expect(errors).toEqual([]);
   const report = {
     passed: true,
     platform: process.platform,
     dataDir,
+    publicUrlChecked: process.env.COWWORKER_NATIVE_PUBLIC_URL ?? null,
     checks: [
       'native Tauri IPC',
       'SQLite persistence across process restart',
@@ -335,6 +393,13 @@ try {
       'queued workspace backup with source hashes',
       'process interruption after dispatch does not duplicate the model call',
       'verified restore to a separate directory and active workspace persistence across restart',
+      'native PDF and DOCX resume import, isolated Windows screenshot and scanned PDF OCR',
+      'two screenshot sources combined in reading order and retained on a vacancy',
+      'separate tailored resume and cover letter with original version preserved after restart',
+      'contextual cover letter fixture generation, reviewed proposal, manual editing and PDF downloads',
+      'version in Settings popover and Escape dismissal',
+      'failed startup keeps recovery available and verified restore clears its error',
+      'legacy database migrates before runner and UI open storage, with original records retained',
     ],
     screenshots: [
       'windows-vacancies.png',
@@ -343,6 +408,10 @@ try {
       'windows-today.png',
       'windows-companies.png',
       'windows-ai-usage.png',
+      'windows-settings-version.png',
+      'windows-screenshot-review.png',
+      'windows-tailored-resume.png',
+      'windows-cover-letter.png',
     ],
   };
   await writeFile(join(output, 'native-report.json'), JSON.stringify(report, null, 2));

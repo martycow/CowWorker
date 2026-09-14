@@ -1,6 +1,6 @@
 [package]
 name = "cowworker-core"
-version = "0.2.6"
+version = "0.2.15"
 edition = "2021"
 
 [dependencies]
@@ -24,4 +24,5 @@ image = { version = "0.25", default-features = false, features = ["png", "jpeg",
 tempfile = "3"
 
 [target.'cfg(windows)'.dependencies]
+windows = { version = "0.62", features = ["Media_Ocr", "Graphics_Imaging", "Storage", "Storage_Streams", "Globalization", "Data_Pdf"] }
 windows-sys = { version = "0.61", features = ["Win32_Foundation", "Win32_Security", "Win32_System_JobObjects", "Win32_System_Threading"] }

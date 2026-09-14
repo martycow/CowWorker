@@ -1,6 +1,6 @@
 [package]
 name = "cowworker"
-version = "0.2.6"
+version = "0.2.15"
 edition = "2021"
 description = "Your local job search workspace"
 

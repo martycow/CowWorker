@@ -10,6 +10,7 @@ use tauri_plugin_opener::OpenerExt;
 
 struct AppState {
     store: Mutex<Option<Store>>,
+    open_error: Mutex<Option<String>>,
     path: Mutex<std::path::PathBuf>,
     root: std::path::PathBuf,
     runner_gate: Mutex<()>,
@@ -75,6 +76,9 @@ fn with_store<T>(
     state: State<AppState>,
     action: impl FnOnce(&mut Store) -> Result<T, String>,
 ) -> Result<T, String> {
+    if let Some(error) = state.open_error.lock().map_err(|e| e.to_string())?.clone() {
+        return Err(error);
+    }
     let mut store = state
         .store
         .lock()
@@ -236,8 +240,14 @@ fn main() {
                 app.path().app_local_data_dir()?.join("live")
             };
             let active_path = recovery::active_path(&path)?;
+            // Finish backup and migration before the runner and UI can open this database.
+            let (initial_store, open_error) = match Store::open(&active_path) {
+                Ok(store) => (Some(store), None),
+                Err(error) => (None, Some(error)),
+            };
             app.manage(AppState {
-                store: Mutex::new(None),
+                store: Mutex::new(initial_store),
+                open_error: Mutex::new(open_error),
                 path: Mutex::new(active_path),
                 root: path.clone(),
                 runner_gate: Mutex::new(()),
@@ -248,6 +258,16 @@ fn main() {
                 loop {
                     let state = handle.state::<AppState>();
                     let gate = state.runner_gate.lock().expect("Task runner lock");
+                    if state
+                        .open_error
+                        .lock()
+                        .expect("Workspace error lock")
+                        .is_some()
+                    {
+                        drop(gate);
+                        std::thread::sleep(std::time::Duration::from_millis(500));
+                        continue;
+                    }
                     let runner_path = state.path.lock().expect("Workspace path lock").clone();
                     match Store::open(&runner_path) {
                         Ok(mut store) => {
@@ -297,6 +317,9 @@ fn main() {
             accept_document_proposal,
             list_imports,
             import_text,
+            import_upload,
+            prepare_job_document,
+            combine_imports,
             review_import,
             import_files,
             export_document,

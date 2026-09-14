@@ -8,6 +8,7 @@ export interface AiContext {
   baseRevision: number;
   baseVersion?: string;
   label: string;
+  documentKind?: string;
 }
 interface Request {
   operationType: string;
@@ -77,6 +78,13 @@ export function AiPanel({
   const [busy, setBusy] = useState(false);
   const [instruction, setInstruction] = useState('');
   const [operationType, setOperationType] = useState('job-analysis');
+  useEffect(() => {
+    if (context?.entityType === 'document')
+      setOperationType(
+        context.documentKind === 'cover-letter' ? 'cover-letter' : 'resume-tailoring',
+      );
+    else if (context?.entityType === 'vacancy') setOperationType('job-analysis');
+  }, [context?.entityId]);
   const [preview, setPreview] = useState<Preview | null>(null);
   const [consent, setConsent] = useState(false);
   const [operations, setOperations] = useState<Operation[]>([]);

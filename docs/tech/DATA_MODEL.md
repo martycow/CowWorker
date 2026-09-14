@@ -1,7 +1,7 @@
 ---
 owner: marty
 created: "2026-09-13"
-last_verified: "2026-09-13"
+last_verified: "2026-09-14"
 status: implemented-baseline-and-planned-migrations
 ---
 
@@ -104,7 +104,7 @@ Past/current employment is an explicit relationship, not an inferred application
 
 ## Proposed migration sequence
 
-Versions 2–8 are implemented. Versions 9–10 remain planning targets. Read the current version before adding another migration.
+Versions 2–9 are implemented. Future schema numbers are assigned when their migrations are added.
 Application build version and SQLite schema version are separate counters.
 
 | Target schema | Phase | Changes and upgrade gate |
@@ -116,8 +116,16 @@ Application build version and SQLite schema version are separate counters.
 | 6 | P4 | AI operations/attempts, usage measurements, price snapshots, non-secret provider settings |
 | 7 | P5 | Import sessions/items, stage runs, classification and review persistence |
 | 8 | P6 | Company research runs and managed assets |
-| 9 | P7 | Context preferences, annotation/dismissal records where proposal metadata is insufficient |
-| 10 | P8 | Measured indexes for usage filters and aggregates |
+| 9 | P5/P7 | Ordered sources for combined imports; vacancy and original resume-version context for prepared documents |
+| Future | P7 | Context preferences and annotation records where proposal metadata is insufficient |
+| Future | P8 | Measured indexes for usage filters and aggregates |
+
+`import_item_sources` retains every source of a combined review, with its reading order.
+The migration backfills each existing import with its original source. It does not change source bytes or saved targets.
+`document_job_context` links a prepared document to one vacancy and one immutable original resume version.
+Creating a tailored resume copies the selected version. Creating a cover letter starts a separate editable template.
+AI preview includes the vacancy, selected original resume text, current document, and profile.
+The preview scope changes when any of these inputs change. Acceptance still creates an immutable document version.
 
 Document categories expand without renaming existing values. Add job-description, portfolio, reference, and unknown.
 Unknown means undecided classification. Other means the user accepted a category outside the named kinds.

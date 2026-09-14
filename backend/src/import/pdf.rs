@@ -22,9 +22,26 @@ pub fn export(text: &str) -> Result<Vec<u8>, String> {
             let advance = face.glyph_hor_advance(gid).unwrap_or(500) as f64 * scale;
             glyphs.insert(gid.0, (ch, advance));
             if width + advance * 11.0 / 1000.0 > 504.0 && !line.is_empty() {
-                lines.push(line);
-                line = String::new();
-                width = 0.0;
+                if let Some(space) = line.rfind(' ').filter(|&position| position > 0) {
+                    let rest = line[space + 1..].to_string();
+                    lines.push(line[..space].to_string());
+                    line = rest;
+                    width = line
+                        .chars()
+                        .map(|c| {
+                            face.glyph_index(c)
+                                .and_then(|g| face.glyph_hor_advance(g))
+                                .unwrap_or(500) as f64
+                                * scale
+                                * 11.0
+                                / 1000.0
+                        })
+                        .sum();
+                } else {
+                    lines.push(line);
+                    line = String::new();
+                    width = 0.0;
+                }
             }
             line.push(ch);
             width += advance * 11.0 / 1000.0;

@@ -4,26 +4,33 @@ fn err(e: impl std::fmt::Display) -> String {
     e.to_string()
 }
 pub fn extract(bytes: &[u8], media_type: &str) -> Result<String> {
-    let text=match media_type {
-  "text/html"=>{
-   let html=String::from_utf8(bytes.to_vec()).map_err(|_|"Page is not UTF-8. Paste its readable text instead.".to_string())?;
-   let document=scraper::Html::parse_document(&html);
-   let selector=scraper::Selector::parse("body").map_err(err)?;
-   let root=document.select(&selector).next().ok_or("Page has no readable body.")?;
-   root.descendants().filter_map(|node|{
-    if node.ancestors().any(|a|a.value().as_element().is_some_and(|e|["script","style","noscript"].contains(&e.name()))){return None;}
-    node.value().as_text().map(|t|t.text.to_string())
-   }).collect::<Vec<_>>().join("\n")
-  },
-  "application/vnd.openxmlformats-officedocument.wordprocessingml.document"=>extract_docx(bytes)?,
-  "application/pdf"=>{
-   if !bytes.starts_with(b"%PDF-"){return Err("Invalid PDF header.".into());}
-   pdf_extract::extract_text_from_mem(bytes).map_err(|_|"PDF is encrypted, corrupt, or unsupported. Upload a text copy.".to_string())?
-  },
-  "image/png"|"image/jpeg"|"image/webp"=>return Err("This image needs OCR or a manual transcript. The original image is preserved; open review to add text.".into()),
-  "text/plain"|"text/markdown"=>String::from_utf8(bytes.to_vec()).map_err(|_|"Text must use UTF-8 encoding.".to_string())?,
-  _=>return Err("Unsupported file type. The original is preserved for review.".into())
- };
+    let text = match media_type {
+        "text/html" => {
+            let html = String::from_utf8(bytes.to_vec())
+                .map_err(|_| "Page is not UTF-8. Paste its readable text instead.".to_string())?;
+            super::html::extract(&html)?
+        }
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document" => {
+            extract_docx(bytes)?
+        }
+        "application/pdf" => {
+            if !bytes.starts_with(b"%PDF-") {
+                return Err("Invalid PDF header.".into());
+            }
+            let text = pdf_extract::extract_text_from_mem(bytes).map_err(|_| {
+                "PDF is encrypted, corrupt, or unsupported. Upload a text copy.".to_string()
+            })?;
+            if text.trim().is_empty() {
+                super::ocr::scanned_pdf(bytes)?
+            } else {
+                text
+            }
+        }
+        "image/png" | "image/jpeg" | "image/webp" => super::ocr::extract(bytes)?,
+        "text/plain" | "text/markdown" => String::from_utf8(bytes.to_vec())
+            .map_err(|_| "Text must use UTF-8 encoding.".to_string())?,
+        _ => return Err("Unsupported file type. The original is preserved for review.".into()),
+    };
     if text.is_empty() || text.contains('\0') || text.len() > 1_000_000 {
         return Err(
             "Extracted text is empty, binary, or exceeds 1 MB. Original remains preserved.".into(),

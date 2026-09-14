@@ -1,7 +1,7 @@
 ---
 owner: marty
 created: '2026-09-13'
-last_verified: '2026-09-13'
+last_verified: '2026-09-14'
 status: active
 ---
 
@@ -12,7 +12,7 @@ This file is the authoritative counter and permanent record of assigned task IDs
 
 ## Counter
 
-Last issued number: `0018`
+Last issued number: `0019`
 
 All task areas share this counter. The next number is the last issued number plus one.
 Numbers have at least four digits, with leading zeros. After `9999`, continue with `10000`.
@@ -74,6 +74,7 @@ The IDs in this registry are permanent from initialization onward.
 | FT-0016 | Add source-backed company research, refresh, and managed logos. | 09-13-2026 | In development 09-13-2026: see V0.2.0_IMPLEMENTATION.md |
 | UI-0017 | Add AI Usage queries, summaries, charts, and attempt history. | 09-13-2026 | In development 09-13-2026: see V0.2.0_IMPLEMENTATION.md |
 | IMP-0018 | Validate the integrated workflow, migration recovery, and release evidence. | 09-13-2026 | In development 09-13-2026: see V0.2.0_IMPLEMENTATION.md |
+| UI-0019 | Show the application version in the Settings popover. | 09-14-2026 | Completed 09-14-2026: root package version shown in native Settings popover; screenshot and Escape dismissal verified. |
 
 Planning note, 09-13-2026: FT-0007 covers the central AI runtime and usage ledger in P4.
 FT-0008 covers reviewed contextual AI in P7. FT-0006 retains its PDF/DOCX export scope alongside P5 import work.

@@ -1,7 +1,7 @@
 ---
 owner: marty
 created: "2026-09-13"
-last_verified: "2026-09-13"
+last_verified: "2026-09-14"
 status: implemented-baseline-and-planned-contracts
 ---
 
@@ -22,6 +22,8 @@ Application updates and history events share transactions. SQLite uses WAL, fore
 The UI reloads workspace metadata after mutations. Document content loads separately for an explicitly selected version.
 The global `act`/`busyRef` guard permits one UI mutation at a time. It is not a scheduler.
 Universal Add retains original sources and persistent review drafts. Explicitly authorized public URL imports use a bounded Rust HTTP adapter.
+Windows image and scanned PDF OCR run in the isolated parser process. Combined imports retain source order and each original file.
+Prepared resumes and cover letters link to a vacancy and an immutable original resume version. The AI preview includes these related records.
 The Rust queue owns execution independently of navigation. One worker processes tasks; a separate heartbeat renews its lease.
 The AI runtime persists logical operations, provider attempts, authorization scopes, and nullable usage measurements.
 Company records own manual facts, employment relationships, source proposals, and managed logos. Application stages remain on applications.

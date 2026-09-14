@@ -12,6 +12,7 @@ pub use companies::*;
 pub use provenance::*;
 pub use sources::*;
 pub use tasks::BackgroundTask;
+mod job_documents;
 mod model;
 mod store;
 

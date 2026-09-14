@@ -1,6 +1,25 @@
 use rusqlite::Connection;
 
-pub const CURRENT_VERSION: i64 = 8;
+pub const CURRENT_VERSION: i64 = 9;
+pub const PRESERVED_TABLES: [&str; 6] = [
+    "vacancies",
+    "documents",
+    "document_versions",
+    "applications",
+    "application_events",
+    "application_documents",
+];
+
+fn record_counts(db: &Connection) -> Result<Vec<(&'static str, i64)>, String> {
+    PRESERVED_TABLES
+        .iter()
+        .map(|&table| {
+            db.query_row(&format!("SELECT COUNT(*) FROM {table}"), [], |r| r.get(0))
+                .map(|count| (table, count))
+                .map_err(|e| e.to_string())
+        })
+        .collect()
+}
 
 pub fn run(db: &Connection) -> Result<(), String> {
     // Foreign keys must be disabled before the transaction when rebuilding a parent table.
@@ -11,6 +30,11 @@ pub fn run(db: &Connection) -> Result<(), String> {
         let mut version: i64 = tx
             .query_row("PRAGMA user_version", [], |r| r.get(0))
             .map_err(|e| e.to_string())?;
+        let original_counts = if version > 0 && version < CURRENT_VERSION {
+            record_counts(&tx)?
+        } else {
+            Vec::new()
+        };
         if version == 0 {
             tx.execute_batch(include_str!("../schema.sql"))
                 .map_err(|e| e.to_string())?;
@@ -49,6 +73,11 @@ pub fn run(db: &Connection) -> Result<(), String> {
         if version == 7 {
             tx.execute_batch(include_str!("008.sql"))
                 .map_err(|e| e.to_string())?;
+            version = 8;
+        }
+        if version == 8 {
+            tx.execute_batch(include_str!("009.sql"))
+                .map_err(|e| e.to_string())?;
         }
         let broken: i64 = tx
             .query_row("SELECT COUNT(*) FROM pragma_foreign_key_check", [], |r| {
@@ -59,6 +88,16 @@ pub fn run(db: &Connection) -> Result<(), String> {
             return Err(
                 "Migration failed its foreign-key check. Original data was retained.".into(),
             );
+        }
+        for (table, count) in original_counts {
+            let current: i64 = tx
+                .query_row(&format!("SELECT COUNT(*) FROM {table}"), [], |r| r.get(0))
+                .map_err(|e| e.to_string())?;
+            if current != count {
+                return Err(format!(
+                    "Migration changed the record count in {table}. The upgrade was rolled back."
+                ));
+            }
         }
         tx.commit().map_err(|e| e.to_string())
     })();

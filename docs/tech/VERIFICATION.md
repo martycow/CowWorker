@@ -1,11 +1,73 @@
 ---
 owner: marty
 created: "2026-09-13"
-last_verified: "2026-09-13"
+last_verified: "2026-09-14"
 status: verified-windows
 ---
 
 # Verification of the first local workflow
+
+## Application document workflow — 2026-09-14
+
+SQLite schema version is 9. The full document workflow first passed on debug build 0.2.9.
+The complete native workflow passed again on debug build 0.2.14, including the startup and migration safeguards described below.
+The [workflow guide](../guides/APPLICATION_DOCUMENTS.md) describes the available controls.
+
+| Check | Result and scope |
+| --- | --- |
+| Frontend and core check | Passed: TypeScript/Vite, 5 Vitest tests, 34 Rust tests |
+| Windows OCR tests | 2 additional tests passed: screenshot PNG and PDF without a text layer |
+| Packaged parser | Passed: isolated PDF/DOCX extraction, Unicode text, corrupt input; Windows parser deadline and memory limit remain enabled |
+| Browser workflow | 7 tests passed, including sidebar, theme, narrow layout, editing and immutable submissions |
+| Native document workflow | Imported PDF and DOCX through the WebView file input; combined two OCR screenshots in selection order; retained exact original image bytes |
+| Contextual document generation | Loopback HTTP fixture received the selected original resume and related vacancy; reviewed cover letter proposal created version 2; manual edit created version 3 |
+| Native PDF export | Resume and cover letter downloaded from their document panels; originals and version history survived process restart |
+| Public URL import | Explicit UI fetch of https://example.com/ returned readable text; JobPosting JSON-LD extraction has a separate deterministic Rust fixture |
+| Recovery | Schema-8 review upgraded and remained editable; legacy submitted bytes, backup/restore and interrupted model dispatch checks passed |
+| Settings version | Native popover showed the build version; Escape dismissed it; screenshot inspected |
+| Startup recovery UI | Passed: a future-schema fixture reports its error, keeps Task Center available, and accepts a verified restore |
+| Native legacy startup | Passed: a schema-1 vacancy and application retained their original content after native initialization |
+| PDF inspection | Both exported PDFs rendered with Poppler at 120 dpi; one page each; required text retained; page images inspected without clipping |
+| Windows release v0.2.15 | Executable and NSIS installer built; release launch showed the restored workspace and correct Settings version |
+| Release parser v0.2.15 | PDF, DOCX, corrupt input, screenshot OCR and scanned PDF OCR passed through the actual release executable |
+
+Final artifacts are `target/release/cowworker.exe` and `target/release/bundle/nsis/CowWorker_0.2.15_x64-setup.exe`.
+`output/verification/release-report.json` records the final launch. Installation, uninstallation, signing and macOS were not repeated for this build.
+
+### Startup recovery observed during release validation
+
+The first v0.2.12 release launch produced an empty workspace after opening a schema-1 database.
+Two concurrent startup backups differed: one retained the original vacancy and application; the other was empty.
+Verification stopped. The original backup passed its manifest checks and was restored through the native restore command into a separate directory.
+Every original column in seven legacy tables matched that backup after restoration. The next process launch retained those records.
+The evidence is `output/verification/live-recovery-report.json`. The original backups and the failed workspace remain on disk.
+
+Startup now finishes one storage initialization before the runner and UI access the database.
+Migration transactions reject changes to original document, vacancy, application, attachment, and event counts.
+The storage layer also compares the result with the pre-upgrade backup counts.
+A failed startup pauses the runner, exposes the error, and keeps verified restore available in Task Center.
+Regression tests cover concurrent legacy opens, committed WAL records after abrupt exit, and rollback when a legacy trigger removes records.
+The low-level cause of the observed empty snapshot was not reproduced by the concurrent core fixtures; no SQLite-engine defect is claimed.
+
+`scripts/morning-native.mjs` extends the native smoke test with this workflow.
+Fixtures under `backend/tests/fixtures/` contain fictional career data; `scripts/morning-fixtures.py` reproduces them.
+Reports and screenshots are under `output/verification/`, including `morning-pdf-report.json`, `morning-resume.pdf`, and `morning-cover-letter.pdf`.
+
+The clipboard check dispatches a synthetic ClipboardEvent containing real PNG bytes inside the native WebView.
+It verifies the paste handler and native OCR. It does not establish operating system clipboard integration or the native file dialog interaction.
+The file input check uses Playwright file selection. Native drag/drop and clean-machine OCR language availability remain separate checks.
+The AI response is a deterministic loopback fixture. No real model account, paid request, or employer submission was used.
+PDF exports preserve selected text in a simple layout. They do not preserve the imported resume's original formatting.
+Mixed text/scanned PDF page coverage and a larger real resume corpus remain open.
+
+| Command | Purpose |
+| --- | --- |
+| `npm.cmd run test:native` | Full isolated native workflow, including the morning document scenario |
+| `$env:COWWORKER_NATIVE_PUBLIC_URL='https://example.com/'; npm.cmd run test:native` | Also verify explicit public URL acquisition; the variable selects the known fixture page |
+| `cargo test -p cowworker-core --test morning -- --include-ignored` | Include installed Windows OCR checks with the core document tests |
+| `cargo test -p cowworker-core --test parser_native -- --ignored` | Exercise the built debug executable as an isolated parser |
+
+The historical sections below retain their original build versions and evidence boundaries.
 
 ## Contextual workspace implementation — 2026-09-13
 

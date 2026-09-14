@@ -31,6 +31,8 @@ import { TaskCenter } from './tasks/TaskCenter';
 import { CompanyHub } from './companies/CompanyHub';
 import { UniversalAdd } from './import/UniversalAdd';
 import { AiPanel, type AiContext } from './ai/AiPanel';
+import { version as appVersion } from '../package.json';
+import { JobDocuments } from './JobDocuments';
 import { AiUsage } from './ai/AiUsage';
 import { SourceList } from './SourceList';
 import { invoke } from '@tauri-apps/api/core';
@@ -90,6 +92,7 @@ const captions: Record<Page, string> = {
 };
 
 export function App() {
+  const [preparingDocuments, setPreparingDocuments] = useState<Vacancy | null>(null);
   const [companyContext, setCompanyContext] = useState<AiContext | null>(null);
   const [workspace, setWorkspace] = useState<Workspace | null>(null);
   const [page, setPage] = useState<Page>('Vacancies');
@@ -252,11 +255,30 @@ export function App() {
           <div className="sidebar-bottom">
             <button
               aria-current={page === 'Settings' ? 'page' : undefined}
-              onClick={() => navigate('Settings')}
+              popoverTarget="settings-menu"
             >
               <Settings size={21} />
               Settings
             </button>
+            <div id="settings-menu" popover="auto" className="settings-popover">
+              <strong>
+                CowWorker <span>v{appVersion}</span>
+              </strong>
+              <Field label="Theme">
+                <select value={theme} onChange={(e) => setTheme(e.target.value)}>
+                  <option value="dark">Dark</option>
+                  <option value="light">Light</option>
+                </select>
+              </Field>
+              <button
+                onClick={() => {
+                  document.getElementById('settings-menu')?.hidePopover();
+                  navigate('Settings');
+                }}
+              >
+                All settings
+              </button>
+            </div>
             <button
               className="profile-nav"
               aria-current={page === 'Profile' ? 'page' : undefined}
@@ -277,7 +299,16 @@ export function App() {
       <main>
         <div className="topbar">
           <TaskCenter />
-          <UniversalAdd onChange={reload} />
+          <UniversalAdd
+            onChange={reload}
+            onOpen={(type, id) => {
+              setPage(type === 'vacancy' ? 'Vacancies' : 'Documents');
+              setSelected(id);
+              setQuery('');
+              setStatus('all');
+              setMode('all');
+            }}
+          />
           <AiPanel
             onChange={reload}
             context={
@@ -294,6 +325,7 @@ export function App() {
                       entityId: chosenDocument.id,
                       baseRevision: chosenDocument.revision,
                       baseVersion: chosenDocument.versions[0]?.id,
+                      documentKind: chosenDocument.kind,
                       label: chosenDocument.title,
                     }
                   : page === 'Companies'
@@ -602,6 +634,15 @@ export function App() {
                         </span>
                       </div>
                       <div className="detail-actions">
+                        {native && (
+                          <button
+                            disabled={busy}
+                            onClick={() => setPreparingDocuments(chosenVacancy)}
+                          >
+                            <FileText size={17} />
+                            Prepare documents
+                          </button>
+                        )}
                         {chosenVacancy.status !== 'archived' && (
                           <button
                             className="primary"
@@ -912,6 +953,7 @@ export function App() {
             {page === 'AI Usage' && <AiUsage />}
             {page === 'Settings' && (
               <div className="settings-content">
+                <p>CowWorker v{appVersion}</p>
                 <section>
                   <h2>Appearance</h2>
                   <Field label="Theme">
@@ -940,8 +982,8 @@ export function App() {
                       : 'This browser demo uses separate browser storage. Launch the desktop app for SQLite and local document files.'}
                   </p>
                   <p className="muted">
-                    Server synchronization, AI analysis and external submissions are not connected
-                    in this version.
+                    AI is optional and configured through the AI panel. Server synchronization and
+                    external submissions are not connected.
                   </p>
                   <Badge tone="green">
                     <ShieldCheck size={14} />
@@ -1039,6 +1081,20 @@ export function App() {
             />
           )}
         </Modal>
+      )}
+      {preparingDocuments && workspace && (
+        <JobDocuments
+          vacancy={preparingDocuments}
+          documents={workspace.documents}
+          onClose={() => setPreparingDocuments(null)}
+          onCreated={async (id) => {
+            await reload();
+            setPreparingDocuments(null);
+            setPage('Documents');
+            setSelected(id);
+            setQuery('');
+          }}
+        />
       )}
     </div>
   );

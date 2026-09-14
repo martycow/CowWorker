@@ -67,6 +67,7 @@ pub async fn restore_workspace(app: tauri::AppHandle, directory: String) -> Resu
         fs::rename(pointer, state.root.join("active-workspace.json")).map_err(|e| e.to_string())?;
         *store = Some(replacement);
         *path = destination.clone();
+        *state.open_error.lock().map_err(|e| e.to_string())? = None;
         let _ = app.emit("workspace-restored", ());
         Ok(destination.to_string_lossy().into_owned())
     })
